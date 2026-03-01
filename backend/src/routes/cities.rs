@@ -11,7 +11,7 @@ use crate::models::*;
 pub async fn get_cities(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     // Order by first day date for each city (from days table); cities with no days last, then by key.
     let cities: Vec<City> = sqlx::query_as(
-        "SELECT c.key, c.name, c.chinese_name, c.notes, c.emoji, c.hero_image \
+        "SELECT c.key, c.name, c.chinese_name, c.description, c.notes, c.emoji, c.hero_image, c.lat, c.lng \
          FROM cities c \
          LEFT JOIN (SELECT city_key, MIN(date) AS first_date FROM days GROUP BY city_key) d ON c.key = d.city_key \
          ORDER BY d.first_date IS NULL, d.first_date ASC, c.key ASC",
@@ -55,22 +55,27 @@ pub async fn update_city(
     };
 
     let name = body.name.as_deref().unwrap_or(&existing.name);
-    let chinese_name = body
-        .chinese_name
-        .as_deref()
-        .unwrap_or(&existing.chinese_name);
+    let chinese_name = body.chinese_name.as_deref().unwrap_or(&existing.chinese_name);
+    let description = body.description.as_deref().unwrap_or(&existing.description);
     let notes = body.notes.as_deref().unwrap_or(&existing.notes);
     let emoji = body.emoji.as_ref().or(existing.emoji.as_ref());
     let hero_image = body.hero_image.as_ref().or(existing.hero_image.as_ref());
+    let lat = body.lat.or(existing.lat);
+    let lng = body.lng.or(existing.lng);
 
     match sqlx::query_as::<_, City>(
-        "UPDATE cities SET name=?, chinese_name=?, notes=?, emoji=?, hero_image=? WHERE key=? RETURNING *",
+        "UPDATE cities \
+         SET name=?, chinese_name=?, description=?, notes=?, emoji=?, hero_image=?, lat=?, lng=? \
+         WHERE key=? RETURNING *",
     )
     .bind(name)
     .bind(chinese_name)
+    .bind(description)
     .bind(notes)
     .bind(emoji)
     .bind(hero_image)
+    .bind(lat)
+    .bind(lng)
     .bind(&key)
     .fetch_one(&state.pool)
     .await

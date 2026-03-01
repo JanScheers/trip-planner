@@ -19,7 +19,7 @@ cp .env .env.local   # edit with your Google OAuth credentials
 cargo run
 ```
 
-The server starts at `http://localhost:8080`. On first run it seeds the database from `seed.tsv`.
+The server starts at `http://localhost:8080`. On first run it seeds the database from the `seed/` directory (`cities.tsv`, `accommodations.tsv`, `days.tsv`).
 
 ### 2. Frontend
 
@@ -35,27 +35,11 @@ The dev server starts at `http://localhost:5173` and proxies API calls to the ba
 
 Edit `backend/.env`:
 
-| Variable | Description |
-|---|---|
-| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
-| `OAUTH_REDIRECT_URL` | OAuth callback URL |
-| `EDITOR_EMAILS` | Comma-separated list of emails with edit access |
-| `DATABASE_URL` | SQLite connection string |
-| `SEED_TSV_PATH` | Path to seed TSV file |
-
-## API Endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/days` | List all days |
-| POST | `/api/days` | Add a day |
-| GET/PUT/DELETE | `/api/days/:id` | Day CRUD |
-| GET | `/api/cities` | List all cities |
-| GET/PUT | `/api/cities/:key` | City read/update |
-| GET/POST | `/api/accommodations` | List/create accommodations |
-| GET/PUT/DELETE | `/api/accommodations/:key` | Accommodation CRUD |
-| POST | `/api/upload` | Upload image |
-| GET | `/api/export` | Export TSV |
-| GET | `/api/auth/login` | OAuth login |
-| GET | `/api/auth/me` | Current user |
+| Variable               | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `GOOGLE_CLIENT_ID`     | Google OAuth2 client ID                         |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret                     |
+| `OAUTH_REDIRECT_URL`   | OAuth callback URL                              |
+| `EDITOR_EMAILS`        | Comma-separated list of emails with edit access |
+| `DATABASE_URL`         | SQLite connection string                        |
+| `SEED_DIR`             | Path to seed data directory (default `../seed`) |

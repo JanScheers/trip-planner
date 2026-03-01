@@ -25,100 +25,107 @@ pub async fn is_db_empty(pool: &SqlitePool) -> bool {
     count.0 == 0
 }
 
-fn title_case_from_key(key: &str) -> String {
-    key.split('-')
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(first) => first.to_uppercase().to_string() + chars.as_str(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+pub async fn seed_from_dir(pool: &SqlitePool, seed_dir: &str) {
+    seed_cities(pool, &format!("{}/cities.tsv", seed_dir)).await;
+    seed_accommodations(pool, &format!("{}/accommodations.tsv", seed_dir)).await;
+    seed_days(pool, &format!("{}/days.tsv", seed_dir)).await;
+    println!("Seeded database from {}", seed_dir);
 }
 
-pub async fn seed_from_tsv(pool: &SqlitePool, tsv_path: &str) {
-    let content = std::fs::read_to_string(tsv_path).expect("Failed to read seed.tsv");
+async fn seed_cities(pool: &SqlitePool, path: &str) {
+    let content = std::fs::read_to_string(path).expect("Failed to read cities.tsv");
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .from_reader(content.as_bytes());
 
-    let city_names: std::collections::HashMap<&str, &str> = [
-        ("beijing", "Beijing"),
-        ("xian", "Xi'an"),
-        ("chengdu", "Chengdu"),
-        ("chongqing", "Chongqing"),
-        ("zhangjiajie", "Zhangjiajie"),
-        ("guilin", "Guilin"),
-        ("hongkong", "Hong Kong"),
-    ]
-    .into_iter()
-    .collect();
+    // columns: key, name, chinese_name, emoji, description, notes, lat, lng
+    for result in reader.records() {
+        let record = result.expect("Failed to read cities.tsv record");
+        let key = record.get(0).unwrap_or("").to_string();
+        let name = record.get(1).unwrap_or("").to_string();
+        let chinese_name = record.get(2).unwrap_or("").to_string();
+        let emoji: Option<String> = record.get(3).filter(|v| !v.is_empty()).map(str::to_string);
+        let description = record.get(4).unwrap_or("").to_string();
+        let notes = record.get(5).unwrap_or("").to_string();
+        let lat: Option<f64> = record.get(6).and_then(|v| v.parse().ok());
+        let lng: Option<f64> = record.get(7).and_then(|v| v.parse().ok());
 
-    for (key, name) in &city_names {
         sqlx::query(
-            "INSERT OR IGNORE INTO cities (key, name, chinese_name, notes) VALUES (?, ?, '', '')",
+            "INSERT OR IGNORE INTO cities \
+             (key, name, chinese_name, emoji, description, notes, lat, lng) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        .bind(key)
-        .bind(name)
+        .bind(&key)
+        .bind(&name)
+        .bind(&chinese_name)
+        .bind(&emoji)
+        .bind(&description)
+        .bind(&notes)
+        .bind(lat)
+        .bind(lng)
         .execute(pool)
         .await
         .expect("Failed to insert city");
     }
+}
 
-    // Collect all records so we can extract accommodation keys before inserting days.
-    struct Record {
-        date: String,
-        city_key: String,
-        accommodation_key: Option<String>,
-    }
+async fn seed_accommodations(pool: &SqlitePool, path: &str) {
+    let content = std::fs::read_to_string(path).expect("Failed to read accommodations.tsv");
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_reader(content.as_bytes());
 
-    let mut records: Vec<Record> = Vec::new();
+    // columns: key, name, emoji, notes
     for result in reader.records() {
-        let record = result.expect("Failed to read TSV record");
-        let date = record[0].to_string();
-        let city_key = record[1].to_string();
-        let accommodation_key = if record.len() > 2 && !record[2].is_empty() {
-            Some(record[2].to_string())
-        } else {
-            None
-        };
-        records.push(Record { date, city_key, accommodation_key });
-    }
+        let record = result.expect("Failed to read accommodations.tsv record");
+        let key = record.get(0).unwrap_or("").to_string();
+        let name = record.get(1).unwrap_or("").to_string();
+        let emoji: Option<String> = record.get(2).filter(|v| !v.is_empty()).map(str::to_string);
+        let notes = record.get(3).unwrap_or("").to_string();
 
-    // Seed unique accommodations derived from the TSV (key -> title-cased name).
-    let mut seen_accommodation_keys = std::collections::HashSet::new();
-    for rec in &records {
-        if let Some(key) = &rec.accommodation_key {
-            if seen_accommodation_keys.insert(key.clone()) {
-                let name = title_case_from_key(key);
-                sqlx::query(
-                    "INSERT OR IGNORE INTO accommodations (key, name, link, notes) VALUES (?, ?, '', '')",
-                )
-                .bind(key)
-                .bind(&name)
-                .execute(pool)
-                .await
-                .expect("Failed to insert accommodation");
-            }
-        }
-    }
-
-    // Insert days.
-    for rec in &records {
         sqlx::query(
-            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, notes) VALUES (?, ?, ?, '')",
+            "INSERT OR IGNORE INTO accommodations (key, name, link, emoji, notes) \
+             VALUES (?, ?, '', ?, ?)",
         )
-        .bind(&rec.date)
-        .bind(&rec.city_key)
-        .bind(&rec.accommodation_key)
+        .bind(&key)
+        .bind(&name)
+        .bind(&emoji)
+        .bind(&notes)
+        .execute(pool)
+        .await
+        .expect("Failed to insert accommodation");
+    }
+}
+
+async fn seed_days(pool: &SqlitePool, path: &str) {
+    let content = std::fs::read_to_string(path).expect("Failed to read days.tsv");
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_reader(content.as_bytes());
+
+    // columns: date, city_key, accommodation_key, emoji, notes
+    for result in reader.records() {
+        let record = result.expect("Failed to read days.tsv record");
+        let date = record.get(0).unwrap_or("").to_string();
+        let city_key = record.get(1).unwrap_or("").to_string();
+        let accommodation_key: Option<String> =
+            record.get(2).filter(|v| !v.is_empty()).map(str::to_string);
+        let emoji: Option<String> = record.get(3).filter(|v| !v.is_empty()).map(str::to_string);
+        let notes = record.get(4).unwrap_or("").to_string();
+
+        sqlx::query(
+            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, emoji, notes) \
+             VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind(&date)
+        .bind(&city_key)
+        .bind(&accommodation_key)
+        .bind(&emoji)
+        .bind(&notes)
         .execute(pool)
         .await
         .expect("Failed to insert day");
     }
-
-    println!("Seeded database from {}", tsv_path);
 }
 
 pub async fn export_tsv(pool: &SqlitePool) -> String {
@@ -151,6 +158,38 @@ mod tests {
             .unwrap();
         run_migrations(&pool).await;
         pool
+    }
+
+    fn make_seed_dir() -> tempfile::TempDir {
+        tempfile::tempdir().unwrap()
+    }
+
+    fn write_cities(dir: &tempfile::TempDir, rows: &[(&str, &str, &str)]) {
+        let path = dir.path().join("cities.tsv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\tnotes\tlat\tlng").unwrap();
+        for (key, name, chinese_name) in rows {
+            writeln!(f, "{}\t{}\t{}\t\tA great city.\tTagline.\t0\t0", key, name, chinese_name)
+                .unwrap();
+        }
+    }
+
+    fn write_accommodations(dir: &tempfile::TempDir, rows: &[(&str, &str)]) {
+        let path = dir.path().join("accommodations.tsv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "key\tname\temoji\tnotes").unwrap();
+        for (key, name) in rows {
+            writeln!(f, "{}\t{}\t\t", key, name).unwrap();
+        }
+    }
+
+    fn write_days(dir: &tempfile::TempDir, rows: &[(&str, &str, &str)]) {
+        let path = dir.path().join("days.tsv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes").unwrap();
+        for (date, city_key, acc_key) in rows {
+            writeln!(f, "{}\t{}\t{}\t\t", date, city_key, acc_key).unwrap();
+        }
     }
 
     #[tokio::test]
@@ -209,28 +248,66 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn seed_from_tsv_inserts_cities_accommodations_and_days() {
+    async fn seed_from_dir_inserts_cities_with_description_and_coords() {
         let pool = test_pool().await;
+        let dir = make_seed_dir();
 
-        let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-        writeln!(tmpfile, "date\tcity\taccommodation").unwrap();
-        writeln!(tmpfile, "2026-10-01\tbeijing\thotel-alpha").unwrap();
-        writeln!(tmpfile, "2026-10-02\tbeijing\thotel-alpha").unwrap();
-        writeln!(tmpfile, "2026-10-03\txian\thotel-beta").unwrap();
+        let cities_path = dir.path().join("cities.tsv");
+        let mut f = std::fs::File::create(&cities_path).unwrap();
+        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\tnotes\tlat\tlng").unwrap();
+        writeln!(f, "beijing\tBeijing\t北京\t🏯\tA grand imperial city.\tForbidden City.\t39.9\t116.4")
+            .unwrap();
+        writeln!(f, "xian\tXi'an\t西安\t🏺\tAncient Silk Road capital.\tTerracotta.\t34.3\t108.9")
+            .unwrap();
 
-        seed_from_tsv(&pool, tmpfile.path().to_str().unwrap()).await;
+        write_accommodations(&dir, &[]);
+        write_days(&dir, &[]);
 
-        let city_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM cities")
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
+
+        let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM cities")
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert!(city_count.0 >= 2, "Expected at least 2 cities");
+        assert_eq!(count.0, 2);
+
+        let row: (String, String, Option<String>, String, String, Option<f64>, Option<f64>) =
+            sqlx::query_as(
+                "SELECT name, chinese_name, emoji, description, notes, lat, lng \
+                 FROM cities WHERE key = 'beijing'",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(row.0, "Beijing");
+        assert_eq!(row.1, "北京");
+        assert_eq!(row.2.as_deref(), Some("🏯"));
+        assert_eq!(row.3, "A grand imperial city.");
+        assert_eq!(row.4, "Forbidden City.");
+        assert!((row.5.unwrap() - 39.9).abs() < 0.01);
+        assert!((row.6.unwrap() - 116.4).abs() < 0.01);
+    }
+
+    #[tokio::test]
+    async fn seed_from_dir_inserts_accommodations_and_days() {
+        let pool = test_pool().await;
+        let dir = make_seed_dir();
+
+        write_cities(&dir, &[("beijing", "Beijing", "北京"), ("xian", "Xi'an", "西安")]);
+        write_accommodations(&dir, &[("hotel-alpha", "Hotel Alpha"), ("hotel-beta", "Hotel Beta")]);
+        write_days(&dir, &[
+            ("2026-10-01", "beijing", "hotel-alpha"),
+            ("2026-10-02", "beijing", "hotel-alpha"),
+            ("2026-10-03", "xian", "hotel-beta"),
+        ]);
+
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
 
         let acc_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM accommodations")
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(acc_count.0, 2, "Expected hotel-alpha and hotel-beta");
+        assert_eq!(acc_count.0, 2);
 
         let day_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM days")
             .fetch_one(&pool)
@@ -240,42 +317,45 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn seed_from_tsv_generates_accommodation_names_from_key() {
+    async fn seed_from_dir_days_carry_emoji_and_notes() {
         let pool = test_pool().await;
+        let dir = make_seed_dir();
 
-        let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-        writeln!(tmpfile, "date\tcity\taccommodation").unwrap();
-        writeln!(tmpfile, "2026-10-01\tbeijing\tbeijing-hutong").unwrap();
+        write_cities(&dir, &[("beijing", "Beijing", "北京")]);
+        write_accommodations(&dir, &[("hutong", "Beijing Hutong")]);
 
-        seed_from_tsv(&pool, tmpfile.path().to_str().unwrap()).await;
+        let days_path = dir.path().join("days.tsv");
+        let mut f = std::fs::File::create(&days_path).unwrap();
+        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes").unwrap();
+        writeln!(f, "2026-10-09\tbeijing\thutong\t✈️\tArrival day, explore hutongs.").unwrap();
 
-        let acc: (String,) = sqlx::query_as("SELECT name FROM accommodations WHERE key = 'beijing-hutong'")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-        assert_eq!(acc.0, "Beijing Hutong");
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
+
+        let row: (Option<String>, String) =
+            sqlx::query_as("SELECT emoji, notes FROM days WHERE date = '2026-10-09'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(row.0.as_deref(), Some("✈️"));
+        assert_eq!(row.1, "Arrival day, explore hutongs.");
     }
 
     #[tokio::test]
     async fn seed_then_export_round_trip() {
         let pool = test_pool().await;
+        let dir = make_seed_dir();
 
-        let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-        writeln!(tmpfile, "date\tcity\taccommodation").unwrap();
-        writeln!(tmpfile, "2026-10-01\tbeijing\thotel-alpha").unwrap();
-        writeln!(tmpfile, "2026-10-02\tbeijing\t").unwrap();
+        write_cities(&dir, &[("beijing", "Beijing", "北京")]);
+        write_accommodations(&dir, &[("hotel-alpha", "Hotel Alpha")]);
+        write_days(&dir, &[
+            ("2026-10-01", "beijing", "hotel-alpha"),
+            ("2026-10-02", "beijing", ""),
+        ]);
 
-        seed_from_tsv(&pool, tmpfile.path().to_str().unwrap()).await;
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
 
         let output = export_tsv(&pool).await;
         assert!(output.contains("2026-10-01\tbeijing\thotel-alpha"));
         assert!(output.contains("2026-10-02\tbeijing\t"));
-    }
-
-    #[test]
-    fn title_case_from_key_splits_and_capitalizes() {
-        assert_eq!(title_case_from_key("beijing-hutong"), "Beijing Hutong");
-        assert_eq!(title_case_from_key("chengdu-panda-inn"), "Chengdu Panda Inn");
-        assert_eq!(title_case_from_key("xian"), "Xian");
     }
 }

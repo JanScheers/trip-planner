@@ -95,6 +95,15 @@
     {/if}
 
     <div class="card">
+      <h3 class="section-title">About</h3>
+      <MarkdownEditor
+        value={city.description}
+        readonly={!canEdit}
+        onSave={(val) => updateField({ description: val })}
+      />
+    </div>
+
+    <div class="card">
       <h3 class="section-title">Notes</h3>
       <MarkdownEditor
         value={city.notes}

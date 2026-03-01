@@ -21,9 +21,9 @@ async fn main() {
     db::run_migrations(&pool).await;
 
     if db::is_db_empty(&pool).await {
-        let tsv_path =
-            std::env::var("SEED_TSV_PATH").unwrap_or_else(|_| "../seed.tsv".to_string());
-        db::seed_from_tsv(&pool, &tsv_path).await;
+        let seed_dir =
+            std::env::var("SEED_DIR").unwrap_or_else(|_| "../seed".to_string());
+        db::seed_from_dir(&pool, &seed_dir).await;
     }
 
     let editor_emails: Vec<String> = std::env::var("EDITOR_EMAILS")

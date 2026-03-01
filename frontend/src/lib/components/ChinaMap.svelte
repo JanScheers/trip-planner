@@ -1,129 +1,285 @@
 <script lang="ts">
-  import { getCityColor } from '../cityColors';
-  import type { City } from '../types';
+  import { onMount } from "svelte";
+  import maplibregl from "maplibre-gl";
+  import "maplibre-gl/dist/maplibre-gl.css";
+  import { getCityColor } from "../cityColors";
+  import type { City, Day } from "../types";
 
-  let { cities, onCityClick }: { cities: City[]; onCityClick: (key: string) => void } = $props();
+  let {
+    cities,
+    days,
+    onCityClick,
+  }: { cities: City[]; days: Day[]; onCityClick: (key: string) => void } =
+    $props();
 
-  const cityPositions: Record<string, { x: number; y: number }> = {
-    beijing:     { x: 370, y: 115 },
-    xian:        { x: 305, y: 195 },
-    chengdu:     { x: 240, y: 245 },
-    chongqing:   { x: 275, y: 265 },
-    zhangjiajie: { x: 330, y: 260 },
-    guilin:      { x: 315, y: 310 },
-    hongkong:    { x: 355, y: 340 },
-  };
+  let routeOrder = $derived(
+    [...new Set(days.map((d) => d.city_key))],
+  );
 
-  const routeOrder = ['beijing', 'xian', 'chengdu', 'chongqing', 'zhangjiajie', 'guilin', 'hongkong'];
-
-  function getRoutePath(): string {
-    return routeOrder
-      .map(key => cityPositions[key])
-      .filter(Boolean)
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
-      .join(' ');
+  function getCityCoords(key: string): [number, number] | null {
+    const city = cities.find((c) => c.key === key);
+    if (city?.lng != null && city?.lat != null) return [city.lng, city.lat];
+    return null;
   }
 
-  function isCityVisited(key: string): boolean {
-    const today = new Date().toISOString().slice(0, 10);
-    return today >= '2026-10-09';
+  let mapContainer: HTMLDivElement;
+  let map: maplibregl.Map | null = null;
+
+  function citiesGeoJSON(): GeoJSON.FeatureCollection {
+    return {
+      type: "FeatureCollection",
+      features: routeOrder
+        .filter((key) => getCityCoords(key) !== null)
+        .map((key) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: getCityCoords(key)! },
+          properties: {
+            key,
+            name: cities.find((c) => c.key === key)?.name || key,
+            chinese_name: cities.find((c) => c.key === key)?.chinese_name || "",
+            color: getCityColor(key, cities),
+          },
+        })),
+    };
   }
 
-  let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
+  function routeGeoJSON(): GeoJSON.Feature {
+    return {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: routeOrder
+          .map((k) => getCityCoords(k))
+          .filter((c): c is [number, number] => c !== null),
+      },
+    };
+  }
+
+  function initLayers() {
+    if (!map) return;
+
+    // Route line
+    map.addSource("route", { type: "geojson", data: routeGeoJSON() });
+    map.addLayer({
+      id: "route-line",
+      type: "line",
+      source: "route",
+      paint: {
+        "line-color": "#d4a843",
+        "line-width": 2,
+        "line-dasharray": [5, 4],
+        "line-opacity": 0.55,
+      },
+    });
+
+    // City points — rendered by WebGL just like the route line,
+    // so positioning is guaranteed to match (no DOM bounding-rect issues).
+    map.addSource("cities", { type: "geojson", data: citiesGeoJSON() });
+
+    // Outer ring
+    map.addLayer({
+      id: "city-rings",
+      type: "circle",
+      source: "cities",
+      paint: {
+        "circle-radius": 10,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-width": 1.5,
+        "circle-stroke-color": ["get", "color"],
+        "circle-stroke-opacity": 0.3,
+      },
+    });
+
+    // Inner dot
+    map.addLayer({
+      id: "city-dots",
+      type: "circle",
+      source: "cities",
+      paint: {
+        "circle-radius": 6,
+        "circle-color": ["get", "color"],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "rgba(0,0,0,0.45)",
+      },
+    });
+
+    // English label above dot
+    map.addLayer({
+      id: "city-labels",
+      type: "symbol",
+      source: "cities",
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "text-size": 11,
+        "text-offset": [0, -1.5],
+        "text-anchor": "bottom",
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#e8e0c8",
+        "text-halo-color": "rgba(0,0,0,0.85)",
+        "text-halo-width": 1.5,
+      },
+    });
+
+    // Chinese name below the English label
+    map.addLayer({
+      id: "city-labels-chinese",
+      type: "symbol",
+      source: "cities",
+      filter: ["!=", ["get", "chinese_name"], ""],
+      layout: {
+        "text-field": ["get", "chinese_name"],
+        "text-font": ["Arial Unicode MS Bold"],
+        "text-size": 10,
+        "text-offset": [0, -3.2],
+        "text-anchor": "bottom",
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#c8b88a",
+        "text-halo-color": "rgba(0,0,0,0.85)",
+        "text-halo-width": 1.5,
+      },
+    });
+
+    // Click handlers
+    const clickHandler = (
+      e: maplibregl.MapMouseEvent & {
+        features?: maplibregl.MapGeoJSONFeature[];
+      },
+    ) => {
+      const key = e.features?.[0]?.properties?.key;
+      if (key) onCityClick(key);
+    };
+    map.on("click", "city-dots", clickHandler);
+    map.on("click", "city-rings", clickHandler);
+
+    map.on("mouseenter", "city-dots", () => {
+      map!.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "city-dots", () => {
+      map!.getCanvas().style.cursor = "";
+    });
+  }
+
+  function fitRouteBounds(animate = false) {
+    if (!map) return;
+    const coords = routeOrder
+      .map((k) => getCityCoords(k))
+      .filter((c): c is [number, number] => c !== null);
+    if (coords.length === 0) return;
+    const lngs = coords.map((c) => c[0]);
+    const lats = coords.map((c) => c[1]);
+    map.fitBounds(
+      [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ],
+      { padding: 90, animate },
+    );
+  }
+
+  onMount(() => {
+    map = new maplibregl.Map({
+      container: mapContainer,
+      style: {
+        version: 8,
+        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+        sources: {
+          carto: {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
+              "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
+              "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
+              "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          },
+        },
+        layers: [{ id: "carto-layer", type: "raster", source: "carto" }],
+      },
+      center: [108, 30],
+      zoom: 3,
+      minZoom: 2,
+      maxZoom: 12,
+      attributionControl: false,
+    });
+
+    map.addControl(
+      new maplibregl.AttributionControl({ compact: true }),
+      "bottom-right",
+    );
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      "top-right",
+    );
+
+    map.on("load", initLayers);
+
+    return () => map?.remove();
+  });
+
+  // Update sources when cities/days props change
+  $effect(() => {
+    const _dep =
+      cities.map((c) => `${c.key}${c.name}${c.chinese_name}${c.lat}${c.lng}`).join(",") +
+      routeOrder.join(",");
+
+    const citySrc = map?.getSource("cities") as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    citySrc?.setData(citiesGeoJSON());
+
+    const routeSrc = map?.getSource("route") as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    routeSrc?.setData(routeGeoJSON());
+
+    fitRouteBounds();
+  });
 </script>
 
-<svg viewBox="0 0 500 420" class="china-map" xmlns="http://www.w3.org/2000/svg">
-  <!-- Simplified China outline -->
-  <path
-    d="M 165 35 L 200 25 L 245 30 L 280 20 L 310 25 L 350 15 L 380 30 L 410 25
-       L 435 45 L 440 75 L 420 95 L 430 115 L 420 140 L 405 155 L 415 175
-       L 400 195 L 410 220 L 395 240 L 405 265 L 390 285 L 375 305
-       L 360 325 L 370 345 L 350 360 L 330 340 L 310 355 L 290 330
-       L 270 340 L 250 320 L 230 335 L 210 310 L 190 320 L 175 295
-       L 160 280 L 150 255 L 135 240 L 120 215 L 110 190 L 95 175
-       L 85 150 L 90 125 L 100 105 L 115 85 L 130 70 L 145 55 L 165 35 Z"
-    fill="var(--bg-secondary)"
-    stroke="var(--gold-dim)"
-    stroke-width="1.5"
-    opacity="0.8"
-  />
-
-  <!-- Route path -->
-  <path
-    d={getRoutePath()}
-    fill="none"
-    stroke="var(--gold)"
-    stroke-width="2"
-    stroke-dasharray="6 4"
-    opacity="0.5"
-  />
-
-  <!-- City markers -->
-  {#each routeOrder as key, i}
-    {@const pos = cityPositions[key]}
-    {@const city = cityMap[key]}
-    {#if pos}
-      <g
-        class="city-marker"
-        onclick={() => onCityClick(key)}
-        role="button"
-        tabindex="0"
-        onkeydown={(e) => { if (e.key === 'Enter') onCityClick(key); }}
-      >
-        <circle
-          cx={pos.x}
-          cy={pos.y}
-          r="18"
-          fill="transparent"
-          class="hit-area"
-        />
-        <circle
-          cx={pos.x}
-          cy={pos.y}
-          r="6"
-          fill={getCityColor(key, cities)}
-          stroke="var(--bg-primary)"
-          stroke-width="2"
-        />
-        <circle
-          cx={pos.x}
-          cy={pos.y}
-          r="10"
-          fill="none"
-          stroke={getCityColor(key, cities)}
-          stroke-width="1"
-          opacity="0.3"
-        />
-        <text
-          x={pos.x}
-          y={pos.y - 14}
-          text-anchor="middle"
-          fill="var(--text-primary)"
-          font-size="11"
-          font-weight="600"
-        >{city?.name || key}</text>
-      </g>
-    {/if}
-  {/each}
-</svg>
+<div class="map-wrap">
+  <div bind:this={mapContainer} class="map-container"></div>
+</div>
 
 <style>
-  .china-map {
+  .map-wrap {
+    position: relative;
+    height: 480px;
+  }
+
+  .map-container {
     width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    display: block;
+    height: 100%;
   }
 
-  .city-marker {
-    cursor: pointer;
+  /* ── MapLibre chrome overrides ── */
+  :global(.maplibregl-ctrl-attrib) {
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: rgba(255, 255, 255, 0.35) !important;
+    font-size: 10px !important;
   }
-
-  .city-marker:hover circle {
-    filter: brightness(1.3);
+  :global(.maplibregl-ctrl-attrib a) {
+    color: rgba(255, 255, 255, 0.35) !important;
   }
-
-  .city-marker:hover text {
-    fill: var(--gold);
+  :global(.maplibregl-ctrl-group) {
+    background: #1a1a24 !important;
+    border: 1px solid rgba(212, 168, 67, 0.2) !important;
+    box-shadow: none !important;
+  }
+  :global(.maplibregl-ctrl-group button) {
+    background-color: transparent !important;
+  }
+  :global(.maplibregl-ctrl-icon) {
+    filter: invert(1) sepia(1) saturate(2) hue-rotate(5deg) brightness(0.9);
   }
 </style>

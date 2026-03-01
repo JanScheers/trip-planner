@@ -8,13 +8,13 @@ const backendDir = path.resolve(__dirname, '../backend');
  *
  * globalSetup (e2e/globalSetup.ts) runs before anything else:
  *   1. Kills any process on port 8080 (ensures a clean backend start)
- *   2. Deletes e2e-test.db (forces re-seeding from seed.tsv)
+ *   2. Deletes e2e-test.db (forces re-seeding from seed/)
  *
  * The backend is started with:
  *   - TEST_EDITOR_SESSION=pw-editor-session  (pre-seeds an editor session)
  *   - EDITOR_EMAILS=e2e-editor@example.com
  *   - DATABASE_URL pointing to e2e-test.db (auto-seeded on first run)
- *   - SEED_TSV_PATH=../seed.tsv
+ *   - SEED_DIR=../seed
  *
  * Editor specs inject the session cookie `session=pw-editor-session` before each test.
  */
@@ -40,7 +40,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `TEST_EDITOR_SESSION=${EDITOR_SESSION} EDITOR_EMAILS=${EDITOR_EMAIL} DATABASE_URL=sqlite:${E2E_DB}?mode=rwc SEED_TSV_PATH=../seed.tsv cargo run`,
+      command: `TEST_EDITOR_SESSION=${EDITOR_SESSION} EDITOR_EMAILS=${EDITOR_EMAIL} DATABASE_URL=sqlite:${E2E_DB}?mode=rwc SEED_DIR=../seed cargo run`,
       cwd: backendDir,
       port: 8080,
       timeout: 120_000,

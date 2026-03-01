@@ -6,10 +6,14 @@ pub mod upload;
 
 use std::sync::Arc;
 
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 
 use crate::auth::AppState;
+
+// Must be at least as large as upload::MAX_FILE_SIZE plus multipart overhead.
+const UPLOAD_BODY_LIMIT: usize = 101 * 1024 * 1024; // 101 MiB
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
@@ -36,5 +40,8 @@ pub fn router() -> Router<Arc<AppState>> {
                 .delete(accommodations::delete_accommodation),
         )
         .route("/api/export", get(export::export_tsv))
-        .route("/api/upload", post(upload::upload_image))
+        .route(
+            "/api/upload",
+            post(upload::upload_image).layer(DefaultBodyLimit::max(UPLOAD_BODY_LIMIT)),
+        )
 }

@@ -39,9 +39,12 @@ pub struct City {
     pub key: String,
     pub name: String,
     pub chinese_name: String,
+    pub description: String,
     pub notes: String,
     pub emoji: Option<String>,
     pub hero_image: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -49,9 +52,12 @@ pub struct City {
 pub struct UpdateCity {
     pub name: Option<String>,
     pub chinese_name: Option<String>,
+    pub description: Option<String>,
     pub notes: Option<String>,
     pub emoji: Option<String>,
     pub hero_image: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, TS)]

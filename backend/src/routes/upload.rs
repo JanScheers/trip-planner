@@ -10,7 +10,7 @@ use crate::auth::{AppState, RequireEditor};
 use crate::error::{bad_request, internal};
 use crate::models::UploadResponse;
 
-const MAX_FILE_SIZE: usize = 5 * 1024 * 1024; // 5 MiB
+const MAX_FILE_SIZE: usize = 100 * 1024 * 1024; // 100 MiB
 
 fn allowed_image_ext(content_type: Option<&str>, bytes: &[u8]) -> Option<&'static str> {
     let ext = match content_type {

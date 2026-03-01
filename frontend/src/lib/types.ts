@@ -27,17 +27,23 @@ export interface City {
   key: string;
   name: string;
   chinese_name: string;
+  description: string;
   notes: string;
   emoji: string | null;
   hero_image: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface UpdateCity {
   name?: string;
   chinese_name?: string;
+  description?: string;
   notes?: string;
   emoji?: string | null;
   hero_image?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Accommodation {

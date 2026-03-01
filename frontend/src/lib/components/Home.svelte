@@ -1,21 +1,22 @@
 <script lang="ts">
-  import { api } from '../api';
-  import { getCityColor } from '../cityColors';
-  import type { Day, City } from '../types';
-  import { navigate } from '../router';
-  import ChinaMap from './ChinaMap.svelte';
+  import { api } from "../api";
+  import { getCityColor } from "../cityColors";
+  import type { Day, City } from "../types";
+  import { navigate } from "../router";
+  import ChinaMap from "./ChinaMap.svelte";
 
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
 
-  const TRIP_START = new Date('2026-10-09T00:00:00');
+  const TRIP_START = new Date("2026-10-09T00:00:00");
 
   let now = $state(new Date());
   let countdown = $derived(getCountdown(now));
 
   function getCountdown(now: Date) {
     const diff = TRIP_START.getTime() - now.getTime();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, past: true };
+    if (diff <= 0)
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, past: true };
     const d = Math.floor(diff / (1000 * 60 * 60 * 24));
     const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const m = Math.floor((diff / (1000 * 60)) % 60);
@@ -24,38 +25,32 @@
   }
 
   $effect(() => {
-    const interval = setInterval(() => { now = new Date(); }, 1000);
+    const interval = setInterval(() => {
+      now = new Date();
+    }, 1000);
     return () => clearInterval(interval);
   });
 
   $effect(() => {
-    api.days.list().then(d => { days = d; });
-    api.cities.list().then(c => { cities = c; });
+    api.days.list().then((d) => {
+      days = d;
+    });
+    api.cities.list().then((c) => {
+      cities = c;
+    });
   });
 
-  let cityMap = $derived(
-    Object.fromEntries(cities.map(c => [c.key, c]))
-  );
+  let cityMap = $derived(Object.fromEntries(cities.map((c) => [c.key, c])));
 
   function getDayProgress(day: Day) {
     const today = new Date().toISOString().slice(0, 10);
-    if (day.date < today) return 'past';
-    if (day.date === today) return 'current';
-    return 'future';
+    if (day.date < today) return "past";
+    if (day.date === today) return "current";
+    return "future";
   }
 
-  const cityDescriptions: Record<string, string> = {
-    beijing: 'The Forbidden City, Great Wall & imperial grandeur',
-    xian: 'Terracotta Warriors & ancient Silk Road gateway',
-    chengdu: 'Giant pandas, spicy hotpot & tea houses',
-    chongqing: 'Mountain city of neon lights & river cruises',
-    zhangjiajie: 'Avatar-inspiring floating pillars & glass bridges',
-    guilin: 'Karst landscapes & Li River bamboo rafting',
-    hongkong: 'Skyline views, dim sum & vibrant street markets',
-  };
-
   let totalDays = $derived(days.length);
-  let citiesCount = $derived(new Set(days.map(d => d.city_key)).size);
+  let citiesCount = $derived(new Set(days.map((d) => d.city_key)).size);
 </script>
 
 <div class="home">
@@ -86,17 +81,23 @@
             </div>
             <div class="countdown-sep">:</div>
             <div class="countdown-item">
-              <span class="countdown-value">{String(countdown.hours).padStart(2, '0')}</span>
+              <span class="countdown-value"
+                >{String(countdown.hours).padStart(2, "0")}</span
+              >
               <span class="countdown-unit">hours</span>
             </div>
             <div class="countdown-sep">:</div>
             <div class="countdown-item">
-              <span class="countdown-value">{String(countdown.minutes).padStart(2, '0')}</span>
+              <span class="countdown-value"
+                >{String(countdown.minutes).padStart(2, "0")}</span
+              >
               <span class="countdown-unit">min</span>
             </div>
             <div class="countdown-sep">:</div>
             <div class="countdown-item">
-              <span class="countdown-value">{String(countdown.seconds).padStart(2, '0')}</span>
+              <span class="countdown-value"
+                >{String(countdown.seconds).padStart(2, "0")}</span
+              >
               <span class="countdown-unit">sec</span>
             </div>
           </div>
@@ -125,10 +126,12 @@
   <section class="section">
     <div class="section-header">
       <h2>The Route</h2>
-      <p class="section-desc">Beijing to Hong Kong — a journey through 5,000 years of history</p>
+      <p class="section-desc">
+        Beijing to Hong Kong — a journey through 5,000 years of history
+      </p>
     </div>
     <div class="map-card card">
-      <ChinaMap {cities} onCityClick={(key) => navigate(`/cities/${key}`)} />
+      <ChinaMap {cities} {days} onCityClick={(key) => navigate(`/cities/${key}`)} />
       <div class="progress-bar">
         {#each days as day}
           <a
@@ -137,7 +140,9 @@
             style="--seg-color: {getCityColor(day.city_key, cities)};"
             title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
           >
-            <span class="segment-label">{new Date(day.date + 'T00:00:00').getDate()}</span>
+            <span class="segment-label"
+              >{new Date(day.date + "T00:00:00").getDate()}</span
+            >
           </a>
         {/each}
       </div>
@@ -151,25 +156,36 @@
     </div>
     <div class="city-grid">
       {#each cities as city}
-        <a href="#/cities/{city.key}" class="city-card" style="--city-color: {getCityColor(city.key, cities)};">
+        <a
+          href="#/cities/{city.key}"
+          class="city-card"
+          style="--city-color: {getCityColor(city.key, cities)};"
+        >
           <div class="city-card-accent"></div>
           <div class="city-card-body">
             <div class="city-card-top">
               {#if city.emoji}
                 <span class="city-emoji">{city.emoji}</span>
               {:else}
-                <span class="city-dot" style="background: {getCityColor(city.key, cities)};"></span>
+                <span
+                  class="city-dot"
+                  style="background: {getCityColor(city.key, cities)};"
+                ></span>
               {/if}
               <div>
                 <h3 class="city-name">{city.name}</h3>
                 {#if city.chinese_name}
-                  <span class="city-chinese chinese-text">{city.chinese_name}</span>
+                  <span class="city-chinese chinese-text"
+                    >{city.chinese_name}</span
+                  >
                 {/if}
               </div>
             </div>
-            <p class="city-desc">{cityDescriptions[city.key] || ''}</p>
+            <p class="city-desc">{city.notes}</p>
             <div class="city-card-footer">
-              <span class="city-days-count">{days.filter(d => d.city_key === city.key).length} days</span>
+              <span class="city-days-count"
+                >{days.filter((d) => d.city_key === city.key).length} days</span
+              >
               <span class="city-arrow">&rarr;</span>
             </div>
           </div>
@@ -212,7 +228,11 @@
     transform: translateX(-50%);
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(212, 168, 67, 0.08) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(212, 168, 67, 0.08) 0%,
+      transparent 70%
+    );
     border-radius: 50%;
   }
 
@@ -226,13 +246,32 @@
     animation: float-lantern 6s ease-in-out infinite;
   }
 
-  .lantern-1 { left: 15%; top: 20%; animation-delay: 0s; }
-  .lantern-2 { left: 80%; top: 35%; animation-delay: 2s; }
-  .lantern-3 { left: 50%; top: 10%; animation-delay: 4s; }
+  .lantern-1 {
+    left: 15%;
+    top: 20%;
+    animation-delay: 0s;
+  }
+  .lantern-2 {
+    left: 80%;
+    top: 35%;
+    animation-delay: 2s;
+  }
+  .lantern-3 {
+    left: 50%;
+    top: 10%;
+    animation-delay: 4s;
+  }
 
   @keyframes float-lantern {
-    0%, 100% { opacity: 0; transform: translateY(0); }
-    50% { opacity: 0.4; transform: translateY(-20px); }
+    0%,
+    100% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.4;
+      transform: translateY(-20px);
+    }
   }
 
   .hero-content {
@@ -295,8 +334,13 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
   .countdown-grid {
@@ -401,7 +445,8 @@
   }
 
   .map-card {
-    padding: 24px 24px 0;
+    padding: 0;
+    margin: 0 20px;
     overflow: hidden;
   }
 
@@ -427,7 +472,9 @@
   .city-card:hover {
     border-color: var(--city-color);
     transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--city-color);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 0 1px var(--city-color);
   }
 
   .city-card-accent {
@@ -511,7 +558,7 @@
   .progress-bar {
     display: flex;
     gap: 0;
-    margin: 16px -24px 0;
+    margin: 0;
   }
 
   .progress-segment {
@@ -521,7 +568,9 @@
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    transition: filter 0.15s, transform 0.15s;
+    transition:
+      filter 0.15s,
+      transform 0.15s;
     position: relative;
   }
 
@@ -548,14 +597,13 @@
     font-size: 11px;
     font-weight: 600;
     color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .future .segment-label {
     color: var(--text-muted);
     text-shadow: none;
   }
-
 
   /* --- CTA --- */
   .cta-strip {
@@ -579,15 +627,36 @@
 
   /* --- Responsive --- */
   @media (max-width: 640px) {
-    .hero { padding: 48px 0 32px; }
-    .title-chinese { font-size: 40px; }
-    .countdown-value { font-size: 26px; }
-    .countdown-item { min-width: 56px; padding: 10px 6px 8px; }
-    .hero-stats { gap: 16px; }
-    .stat-value { font-size: 20px; }
-    .segment-label { font-size: 9px; }
-    .progress-segment { height: 36px; }
-    .city-grid { grid-template-columns: 1fr; }
-    .home { gap: 36px; }
+    .hero {
+      padding: 48px 0 32px;
+    }
+    .title-chinese {
+      font-size: 40px;
+    }
+    .countdown-value {
+      font-size: 26px;
+    }
+    .countdown-item {
+      min-width: 56px;
+      padding: 10px 6px 8px;
+    }
+    .hero-stats {
+      gap: 16px;
+    }
+    .stat-value {
+      font-size: 20px;
+    }
+    .segment-label {
+      font-size: 9px;
+    }
+    .progress-segment {
+      height: 36px;
+    }
+    .city-grid {
+      grid-template-columns: 1fr;
+    }
+    .home {
+      gap: 36px;
+    }
   }
 </style>
