@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getCityColor } from '../cityColors';
   import type { City } from '../types';
 
   let { cities, onCityClick }: { cities: City[]; onCityClick: (key: string) => void } = $props();
@@ -25,20 +26,7 @@
 
   function isCityVisited(key: string): boolean {
     const today = new Date().toISOString().slice(0, 10);
-    return today >= '2026-10-01';
-  }
-
-  function getCityColor(key: string): string {
-    const colors: Record<string, string> = {
-      beijing: '#e74c3c',
-      xian: '#e67e22',
-      chengdu: '#f1c40f',
-      chongqing: '#2ecc71',
-      zhangjiajie: '#1abc9c',
-      guilin: '#3498db',
-      hongkong: '#9b59b6',
-    };
-    return colors[key] || '#d4a843';
+    return today >= '2026-10-09';
   }
 
   let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
@@ -93,7 +81,7 @@
           cx={pos.x}
           cy={pos.y}
           r="6"
-          fill={getCityColor(key)}
+          fill={getCityColor(key, cities)}
           stroke="var(--bg-primary)"
           stroke-width="2"
         />
@@ -102,7 +90,7 @@
           cy={pos.y}
           r="10"
           fill="none"
-          stroke={getCityColor(key)}
+          stroke={getCityColor(key, cities)}
           stroke-width="1"
           opacity="0.3"
         />

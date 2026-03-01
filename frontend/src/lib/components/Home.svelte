@@ -1,5 +1,6 @@
 <script lang="ts">
   import { api } from '../api';
+  import { getCityColor } from '../cityColors';
   import type { Day, City } from '../types';
   import { navigate } from '../router';
   import ChinaMap from './ChinaMap.svelte';
@@ -7,7 +8,7 @@
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
 
-  const TRIP_START = new Date('2026-10-01T00:00:00');
+  const TRIP_START = new Date('2026-10-09T00:00:00');
 
   let now = $state(new Date());
   let countdown = $derived(getCountdown(now));
@@ -41,19 +42,6 @@
     if (day.date < today) return 'past';
     if (day.date === today) return 'current';
     return 'future';
-  }
-
-  function getCityColor(key: string): string {
-    const colors: Record<string, string> = {
-      beijing: '#e74c3c',
-      xian: '#e67e22',
-      chengdu: '#f1c40f',
-      chongqing: '#2ecc71',
-      zhangjiajie: '#1abc9c',
-      guilin: '#3498db',
-      hongkong: '#9b59b6',
-    };
-    return colors[key] || '#d4a843';
   }
 
   const cityDescriptions: Record<string, string> = {
@@ -141,6 +129,18 @@
     </div>
     <div class="map-card card">
       <ChinaMap {cities} onCityClick={(key) => navigate(`/cities/${key}`)} />
+      <div class="progress-bar">
+        {#each days as day}
+          <a
+            href="#/days/{day.id}"
+            class="progress-segment {getDayProgress(day)}"
+            style="--seg-color: {getCityColor(day.city_key, cities)};"
+            title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
+          >
+            <span class="segment-label">{new Date(day.date + 'T00:00:00').getDate()}</span>
+          </a>
+        {/each}
+      </div>
     </div>
   </section>
 
@@ -151,14 +151,14 @@
     </div>
     <div class="city-grid">
       {#each cities as city}
-        <a href="#/cities/{city.key}" class="city-card" style="--city-color: {getCityColor(city.key)};">
+        <a href="#/cities/{city.key}" class="city-card" style="--city-color: {getCityColor(city.key, cities)};">
           <div class="city-card-accent"></div>
           <div class="city-card-body">
             <div class="city-card-top">
               {#if city.emoji}
                 <span class="city-emoji">{city.emoji}</span>
               {:else}
-                <span class="city-dot" style="background: {getCityColor(city.key)};"></span>
+                <span class="city-dot" style="background: {getCityColor(city.key, cities)};"></span>
               {/if}
               <div>
                 <h3 class="city-name">{city.name}</h3>
@@ -175,35 +175,6 @@
           </div>
         </a>
       {/each}
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-header">
-      <h2>Timeline</h2>
-      <p class="section-desc">Day by day through China</p>
-    </div>
-    <div class="card timeline-card">
-      <div class="progress-bar">
-        {#each days as day}
-          <a
-            href="#/days/{day.id}"
-            class="progress-segment {getDayProgress(day)}"
-            style="--seg-color: {getCityColor(day.city_key)};"
-            title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
-          >
-            <span class="segment-label">{new Date(day.date + 'T00:00:00').getDate()}</span>
-          </a>
-        {/each}
-      </div>
-      <div class="progress-legend">
-        {#each cities as city}
-          <div class="legend-item">
-            <span class="legend-dot" style="background: {getCityColor(city.key)};"></span>
-            <span>{city.name}</span>
-          </div>
-        {/each}
-      </div>
     </div>
   </section>
 
@@ -430,7 +401,8 @@
   }
 
   .map-card {
-    padding: 24px;
+    padding: 24px 24px 0;
+    overflow: hidden;
   }
 
   /* --- City Grid --- */
@@ -535,16 +507,11 @@
     transform: translateX(3px);
   }
 
-  /* --- Timeline --- */
-  .timeline-card {
-    padding: 24px;
-  }
-
+  /* --- Timeline (merged into map card) --- */
   .progress-bar {
     display: flex;
-    gap: 3px;
-    border-radius: var(--radius);
-    overflow: hidden;
+    gap: 0;
+    margin: 16px -24px 0;
   }
 
   .progress-segment {
@@ -554,7 +521,7 @@
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: filter 0.15s, transform 0.15s;
     position: relative;
   }
 
@@ -564,22 +531,13 @@
   }
 
   .progress-segment.future {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-  }
-
-  .progress-segment:first-child {
-    border-radius: var(--radius) 0 0 var(--radius);
-  }
-
-  .progress-segment:last-child {
-    border-radius: 0 var(--radius) var(--radius) 0;
+    background: color-mix(in srgb, var(--seg-color) 22%, var(--bg-secondary));
   }
 
   .progress-segment:hover {
-    transform: scaleY(1.2);
+    transform: scaleY(1.15);
     z-index: 1;
-    filter: brightness(1.15);
+    filter: brightness(1.2);
   }
 
   .progress-segment.current {
@@ -598,27 +556,6 @@
     text-shadow: none;
   }
 
-  .progress-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-top: 14px;
-    justify-content: center;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
 
   /* --- CTA --- */
   .cta-strip {

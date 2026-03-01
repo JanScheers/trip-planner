@@ -1,5 +1,6 @@
 <script lang="ts">
   import { api } from '../api';
+  import { getCityColor } from '../cityColors';
   import type { City, Day } from '../types';
 
   let cities: City[] = $state([]);
@@ -14,19 +15,6 @@
       api.cities.list(),
       api.days.list(),
     ]);
-  }
-
-  function getCityColor(key: string): string {
-    const colors: Record<string, string> = {
-      beijing: '#e74c3c',
-      xian: '#e67e22',
-      chengdu: '#f1c40f',
-      chongqing: '#2ecc71',
-      zhangjiajie: '#1abc9c',
-      guilin: '#3498db',
-      hongkong: '#9b59b6',
-    };
-    return colors[key] || '#d4a843';
   }
 </script>
 
@@ -43,8 +31,8 @@
     <ul class="city-list-ul">
       {#each cities as city}
         <li>
-          <a href="#/cities/{city.key}" class="city-list-link" style="--city-color: {getCityColor(city.key)};">
-            <span class="city-list-dot" style="background: {getCityColor(city.key)};"></span>
+          <a href="#/cities/{city.key}" class="city-list-link" style="--city-color: {getCityColor(city.key, cities)};">
+            <span class="city-list-dot" style="background: {getCityColor(city.key, cities)};"></span>
             <span class="city-list-name">{city.name}</span>
             {#if city.chinese_name}
               <span class="city-list-chinese chinese-text">{city.chinese_name}</span>

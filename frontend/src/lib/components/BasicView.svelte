@@ -1,5 +1,6 @@
 <script lang="ts">
   import { api } from '../api';
+  import { getCityColor } from '../cityColors';
   import type { Day, City, Accommodation, AuthUser } from '../types';
 
   let { user }: { user: AuthUser | null } = $props();
@@ -59,19 +60,6 @@
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
-
-  function getCityColor(key: string): string {
-    const colors: Record<string, string> = {
-      beijing: '#e74c3c',
-      xian: '#e67e22',
-      chengdu: '#f1c40f',
-      chongqing: '#2ecc71',
-      zhangjiajie: '#1abc9c',
-      guilin: '#3498db',
-      hongkong: '#9b59b6',
-    };
-    return colors[key] || '#d4a843';
-  }
 </script>
 
 <div class="page-header">
@@ -114,7 +102,7 @@
               </select>
             {:else}
               <a href="#/cities/{day.city_key}" class="city-link">
-                <span class="city-indicator" style="background: {getCityColor(day.city_key)};"></span>
+                <span class="city-indicator" style="background: {getCityColor(day.city_key, cities)};"></span>
                 {#if cityMap[day.city_key]?.emoji}{cityMap[day.city_key].emoji} {/if}{cityMap[day.city_key]?.name || day.city_key}
               </a>
             {/if}

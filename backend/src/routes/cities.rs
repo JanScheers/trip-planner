@@ -9,10 +9,16 @@ use crate::error::{internal, not_found};
 use crate::models::*;
 
 pub async fn get_cities(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let cities: Vec<City> = sqlx::query_as("SELECT * FROM cities ORDER BY key")
-        .fetch_all(&state.pool)
-        .await
-        .unwrap_or_default();
+    // Order by first day date for each city (from days table); cities with no days last, then by key.
+    let cities: Vec<City> = sqlx::query_as(
+        "SELECT c.key, c.name, c.chinese_name, c.notes, c.emoji, c.hero_image \
+         FROM cities c \
+         LEFT JOIN (SELECT city_key, MIN(date) AS first_date FROM days GROUP BY city_key) d ON c.key = d.city_key \
+         ORDER BY d.first_date IS NULL, d.first_date ASC, c.key ASC",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .unwrap_or_default();
     Json(cities)
 }
 
