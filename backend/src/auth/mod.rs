@@ -311,3 +311,139 @@ where
         Ok(RequireEditor(user))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::extract::FromRequestParts;
+    use axum::http::Request;
+    use axum_extra::extract::cookie::CookieJar;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    async fn make_state(
+        sessions: HashMap<String, AuthState>,
+        editor_emails: Vec<String>,
+    ) -> Arc<AppState> {
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+        Arc::new(AppState {
+            oauth_client: build_oauth_client(),
+            editor_emails,
+            pool,
+            sessions: Mutex::new(sessions),
+            frontend_url: "http://localhost:5173".to_string(),
+        })
+    }
+
+    async fn jar_with_session(session_id: &str) -> CookieJar {
+        let req = Request::builder()
+            .header("cookie", format!("session={}", session_id))
+            .body(())
+            .unwrap();
+        let (mut parts, _) = req.into_parts();
+        CookieJar::from_request_parts(&mut parts, &()).await.unwrap()
+    }
+
+    async fn empty_jar() -> CookieJar {
+        let req = Request::builder().body(()).unwrap();
+        let (mut parts, _) = req.into_parts();
+        CookieJar::from_request_parts(&mut parts, &()).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn get_current_user_none_without_cookie() {
+        let state = make_state(HashMap::new(), vec![]).await;
+        let jar = empty_jar().await;
+        assert!(get_current_user(&jar, &state).is_none());
+    }
+
+    #[tokio::test]
+    async fn get_current_user_none_for_invalid_session_id() {
+        let state = make_state(HashMap::new(), vec![]).await;
+        let jar = jar_with_session("nonexistent-session").await;
+        assert!(get_current_user(&jar, &state).is_none());
+    }
+
+    #[tokio::test]
+    async fn get_current_user_returns_editor_when_email_matches() {
+        let mut sessions = HashMap::new();
+        sessions.insert(
+            "editor-session".to_string(),
+            AuthState {
+                email: "editor@test.com".to_string(),
+                name: "Editor".to_string(),
+                picture: None,
+            },
+        );
+        let state = make_state(sessions, vec!["editor@test.com".to_string()]).await;
+
+        let jar = jar_with_session("editor-session").await;
+        let user = get_current_user(&jar, &state).unwrap();
+        assert_eq!(user.email, "editor@test.com");
+        assert_eq!(user.name, "Editor");
+        assert!(user.is_editor);
+    }
+
+    #[tokio::test]
+    async fn get_current_user_returns_viewer_when_email_not_in_editor_list() {
+        let mut sessions = HashMap::new();
+        sessions.insert(
+            "viewer-session".to_string(),
+            AuthState {
+                email: "viewer@test.com".to_string(),
+                name: "Viewer".to_string(),
+                picture: None,
+            },
+        );
+        let state = make_state(sessions, vec!["editor@test.com".to_string()]).await;
+
+        let jar = jar_with_session("viewer-session").await;
+        let user = get_current_user(&jar, &state).unwrap();
+        assert_eq!(user.email, "viewer@test.com");
+        assert!(!user.is_editor);
+    }
+
+    #[tokio::test]
+    async fn is_editor_true_for_editor_session() {
+        let mut sessions = HashMap::new();
+        sessions.insert(
+            "editor-session".to_string(),
+            AuthState {
+                email: "editor@test.com".to_string(),
+                name: "Editor".to_string(),
+                picture: None,
+            },
+        );
+        let state = make_state(sessions, vec!["editor@test.com".to_string()]).await;
+
+        let jar = jar_with_session("editor-session").await;
+        assert!(is_editor(&jar, &state));
+    }
+
+    #[tokio::test]
+    async fn is_editor_false_without_session() {
+        let state = make_state(HashMap::new(), vec!["editor@test.com".to_string()]).await;
+        let jar = empty_jar().await;
+        assert!(!is_editor(&jar, &state));
+    }
+
+    #[tokio::test]
+    async fn is_editor_false_for_viewer_session() {
+        let mut sessions = HashMap::new();
+        sessions.insert(
+            "viewer-session".to_string(),
+            AuthState {
+                email: "viewer@test.com".to_string(),
+                name: "Viewer".to_string(),
+                picture: None,
+            },
+        );
+        let state = make_state(sessions, vec!["editor@test.com".to_string()]).await;
+
+        let jar = jar_with_session("viewer-session").await;
+        assert!(!is_editor(&jar, &state));
+    }
+}

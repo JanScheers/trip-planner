@@ -5,15 +5,20 @@ use cookie::Cookie;
 use axum_test::TestServer;
 use sqlx::SqlitePool;
 
-use backend::auth::AppState;
+use backend::auth::{self, AppState};
 use backend::db;
 use backend::models::AuthState;
 use backend::routes;
 
 const TEST_EDITOR_SESSION: &str = "test-editor-session";
+const TEST_VIEWER_SESSION: &str = "test-viewer-session";
 
 fn editor_cookie() -> Cookie<'static> {
     Cookie::build(("session", TEST_EDITOR_SESSION)).path("/").build().into_owned()
+}
+
+fn viewer_cookie() -> Cookie<'static> {
+    Cookie::build(("session", TEST_VIEWER_SESSION)).path("/").build().into_owned()
 }
 
 async fn setup_pool() -> SqlitePool {
@@ -40,25 +45,42 @@ async fn setup_pool() -> SqlitePool {
     pool
 }
 
-async fn setup_server(pool: SqlitePool) -> TestServer {
-    let mut sessions = HashMap::new();
-    sessions.insert(
-        TEST_EDITOR_SESSION.to_string(),
-        AuthState {
-            email: "editor@test.com".to_string(),
-            name: "Editor".to_string(),
-            picture: None,
-        },
-    );
-    let state = Arc::new(AppState {
-        oauth_client: backend::auth::build_oauth_client(),
+fn make_state(pool: SqlitePool, sessions: HashMap<String, AuthState>) -> Arc<AppState> {
+    Arc::new(AppState {
+        oauth_client: auth::build_oauth_client(),
         editor_emails: vec!["editor@test.com".to_string()],
         pool,
         sessions: Mutex::new(sessions),
         frontend_url: "http://localhost:5173".to_string(),
-    });
+    })
+}
 
+fn base_sessions() -> HashMap<String, AuthState> {
+    let mut sessions = HashMap::new();
+    sessions.insert(
+        TEST_EDITOR_SESSION.to_string(),
+        AuthState { email: "editor@test.com".to_string(), name: "Editor".to_string(), picture: None },
+    );
+    sessions.insert(
+        TEST_VIEWER_SESSION.to_string(),
+        AuthState { email: "viewer@test.com".to_string(), name: "Viewer".to_string(), picture: None },
+    );
+    sessions
+}
+
+async fn setup_server(pool: SqlitePool) -> TestServer {
+    let state = make_state(pool, base_sessions());
     let app = routes::router().with_state(state);
+    TestServer::new(app)
+}
+
+/// Server that mounts both API routes and auth routes (for /api/auth/* tests).
+async fn setup_full_server(pool: SqlitePool) -> TestServer {
+    let state = make_state(pool, base_sessions());
+    let app = axum::Router::new()
+        .merge(auth::router())
+        .merge(routes::router())
+        .with_state(state);
     TestServer::new(app)
 }
 
@@ -341,4 +363,188 @@ async fn test_export_tsv_with_data() {
 
     assert_eq!(text.lines().count(), 2);
     assert!(text.contains("2026-10-01\tbeijing\thotel-a"));
+}
+
+// --- Authorization (401 / 403) ---
+
+#[tokio::test]
+async fn test_create_day_requires_auth() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .post("/api/days")
+        .json(&serde_json::json!({"date": "2026-10-01", "city_key": "beijing"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_create_day_viewer_gets_403() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .post("/api/days")
+        .add_cookie(viewer_cookie())
+        .json(&serde_json::json!({"date": "2026-10-01", "city_key": "beijing"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_update_city_requires_auth() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .put("/api/cities/beijing")
+        .json(&serde_json::json!({"notes": "Capital city"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_update_city_viewer_gets_403() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .put("/api/cities/beijing")
+        .add_cookie(viewer_cookie())
+        .json(&serde_json::json!({"notes": "Capital city"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_delete_accommodation_requires_auth() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server.delete("/api/accommodations/hotel-a").await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_delete_accommodation_viewer_gets_403() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .delete("/api/accommodations/hotel-a")
+        .add_cookie(viewer_cookie())
+        .await;
+    resp.assert_status(axum::http::StatusCode::FORBIDDEN);
+}
+
+// --- Auth endpoints (/api/auth/*) ---
+
+#[tokio::test]
+async fn test_me_with_no_cookie_returns_null() {
+    let server = setup_full_server(setup_pool().await).await;
+    let resp = server.get("/api/auth/me").await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert!(body.is_null());
+}
+
+#[tokio::test]
+async fn test_me_with_editor_cookie_returns_user_with_is_editor_true() {
+    let server = setup_full_server(setup_pool().await).await;
+    let resp = server.get("/api/auth/me").add_cookie(editor_cookie()).await;
+    resp.assert_status_ok();
+    let user: serde_json::Value = resp.json();
+    assert_eq!(user["email"], "editor@test.com");
+    assert_eq!(user["is_editor"], true);
+}
+
+#[tokio::test]
+async fn test_me_with_viewer_cookie_returns_user_with_is_editor_false() {
+    let server = setup_full_server(setup_pool().await).await;
+    let resp = server.get("/api/auth/me").add_cookie(viewer_cookie()).await;
+    resp.assert_status_ok();
+    let user: serde_json::Value = resp.json();
+    assert_eq!(user["email"], "viewer@test.com");
+    assert_eq!(user["is_editor"], false);
+}
+
+#[tokio::test]
+async fn test_logout_redirects_and_clears_session() {
+    let server = setup_full_server(setup_pool().await).await;
+    // axum-test follows redirects by default; check we end up somewhere valid
+    let resp = server
+        .get("/api/auth/logout")
+        .add_cookie(editor_cookie())
+        .await;
+    // Logout redirects to the frontend_url (303 or 302)
+    let status = resp.status_code();
+    assert!(
+        status == axum::http::StatusCode::SEE_OTHER
+            || status == axum::http::StatusCode::FOUND
+            || status == axum::http::StatusCode::OK,
+        "Expected redirect status, got {status}"
+    );
+}
+
+// --- Input validation / edge cases ---
+
+#[tokio::test]
+async fn test_create_day_missing_required_fields_returns_error() {
+    let server = setup_server(setup_pool().await).await;
+    // Missing both date and city_key
+    let resp = server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({}))
+        .await;
+    // Axum's Json extractor returns 422 for deserialization failures
+    let status = resp.status_code().as_u16();
+    assert!(status == 400 || status == 422, "Expected 400 or 422, got {status}");
+}
+
+#[tokio::test]
+async fn test_create_accommodation_duplicate_key_returns_error() {
+    let server = setup_server(setup_pool().await).await;
+    // hotel-a already exists in setup_pool()
+    let resp = server
+        .post("/api/accommodations")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"key": "hotel-a", "name": "Duplicate"}))
+        .await;
+    // Duplicate key violates UNIQUE constraint -> bad_request (400)
+    resp.assert_status(axum::http::StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_update_day_empty_body_is_noop() {
+    let server = setup_server(setup_pool().await).await;
+
+    let create_resp = server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "date": "2026-10-01",
+            "city_key": "beijing",
+            "accommodation_key": null
+        }))
+        .await;
+    let day: serde_json::Value = create_resp.json();
+    let id = day["id"].as_i64().unwrap();
+
+    let update_resp = server
+        .put(&format!("/api/days/{id}"))
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({}))
+        .await;
+    update_resp.assert_status_ok();
+
+    let updated: serde_json::Value = update_resp.json();
+    assert_eq!(updated["date"], "2026-10-01");
+    assert_eq!(updated["city_key"], "beijing");
+}
+
+#[tokio::test]
+async fn test_get_accommodation_by_key() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server.get("/api/accommodations/hotel-a").await;
+    resp.assert_status_ok();
+    let acc: serde_json::Value = resp.json();
+    assert_eq!(acc["key"], "hotel-a");
+    assert_eq!(acc["name"], "Hotel Alpha");
+}
+
+#[tokio::test]
+async fn test_get_accommodation_not_found() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server.get("/api/accommodations/nonexistent").await;
+    resp.assert_status(axum::http::StatusCode::NOT_FOUND);
 }

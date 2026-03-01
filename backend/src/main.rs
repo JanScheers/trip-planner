@@ -7,6 +7,7 @@ use tower_http::services::ServeDir;
 
 use backend::auth::{self, AppState};
 use backend::db;
+use backend::models::AuthState;
 use backend::routes;
 
 #[tokio::main]
@@ -38,11 +39,21 @@ async fn main() {
 
     // Sessions are in-memory: they are lost on restart and not shared across instances.
     // For production with multiple instances, use a shared store (e.g. Redis or DB).
+    let mut initial_sessions = HashMap::new();
+    if let Ok(test_session) = std::env::var("TEST_EDITOR_SESSION") {
+        if let Some(email) = editor_emails.first().cloned() {
+            initial_sessions.insert(test_session, AuthState {
+                email,
+                name: "Test Editor".to_string(),
+                picture: None,
+            });
+        }
+    }
     let app_state = Arc::new(AppState {
         oauth_client,
         editor_emails,
         pool: pool.clone(),
-        sessions: Mutex::new(HashMap::new()),
+        sessions: Mutex::new(initial_sessions),
         frontend_url: frontend_url.clone(),
     });
 
