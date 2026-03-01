@@ -5,7 +5,14 @@ import type {
   AuthUser, UploadResponse
 } from './types';
 
-const BASE = 'http://localhost:8080';
+/** API base URL. Empty string in dev uses Vite proxy; set VITE_API_ORIGIN for production. */
+export const BASE = import.meta.env.VITE_API_ORIGIN ?? '';
+
+/** Full URL for static assets (e.g. uploaded images). */
+export function staticUrl(path: string | null | undefined): string {
+  if (path == null || path === '') return '';
+  return path.startsWith('http') ? path : `${BASE}${path}`;
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {

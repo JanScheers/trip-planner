@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../api';
+  import { api, staticUrl } from '../api';
   import type { Accommodation, Day, AuthUser } from '../types';
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -13,12 +13,13 @@
   let accDays = $derived(days.filter(d => d.accommodation_key === key));
 
   $effect(() => {
-    loadData();
+    const accKey = key;
+    loadData(accKey);
   });
 
-  async function loadData() {
+  async function loadData(accKey: string) {
     [acc, days] = await Promise.all([
-      api.accommodations.get(key),
+      api.accommodations.get(accKey),
       api.days.list(),
     ]);
   }
@@ -53,7 +54,7 @@
       onUpload={(url) => updateField({ hero_image: url })}
     />
   {:else if acc.hero_image}
-    <img src="http://localhost:8080{acc.hero_image}" alt={acc.name} class="hero-image" />
+    <img src={staticUrl(acc.hero_image)} alt={acc.name} class="hero-image" />
   {/if}
 
   <div class="detail-grid">

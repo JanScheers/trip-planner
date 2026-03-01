@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../api';
+  import { api, staticUrl } from '../api';
 
   let { currentImage, onUpload }: { currentImage: string | null; onUpload: (url: string) => void } = $props();
 
@@ -22,7 +22,7 @@
 
 <div class="image-upload">
   {#if currentImage}
-    <img src="http://localhost:8080{currentImage}" alt="Hero" class="hero-image" />
+    <img src={staticUrl(currentImage)} alt="Hero" class="hero-image" />
   {/if}
   <label class="upload-btn btn-outline btn-sm">
     {uploading ? 'Uploading...' : currentImage ? 'Change Image' : 'Upload Image'}

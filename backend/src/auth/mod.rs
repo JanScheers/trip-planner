@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use axum::extract::{Query, State};
+use axum::extract::FromRequestParts;
+use axum::extract::{FromRef, Query, State};
+use axum::http::request::Parts;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::get;
@@ -15,6 +17,7 @@ use serde::Deserialize;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
+use crate::error::ApiError;
 use crate::models::{AuthState, AuthUser};
 
 type OAuthClient = oauth2::Client<
@@ -38,12 +41,13 @@ pub struct AppState {
     pub editor_emails: Vec<String>,
     pub pool: SqlitePool,
     pub sessions: Mutex<HashMap<String, AuthState>>,
+    /// URL to redirect to after login/logout (frontend app URL).
+    pub frontend_url: String,
 }
 
 #[derive(Deserialize)]
 pub struct AuthCallback {
     pub code: String,
-    #[allow(dead_code)]
     pub state: String,
 }
 
@@ -82,8 +86,11 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/api/auth/me", get(me))
 }
 
-pub async fn login(State(state): State<Arc<AppState>>) -> Redirect {
-    let (auth_url, _csrf_token) = state
+pub async fn login(
+    State(state): State<Arc<AppState>>,
+    jar: CookieJar,
+) -> impl IntoResponse {
+    let (auth_url, csrf_token) = state
         .oauth_client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("openid".to_string()))
@@ -91,14 +98,38 @@ pub async fn login(State(state): State<Arc<AppState>>) -> Redirect {
         .add_scope(Scope::new("profile".to_string()))
         .url();
 
-    Redirect::to(auth_url.as_str())
+    let cookie = Cookie::build(("oauth_state", csrf_token.secret().to_string()))
+        .path("/api/auth")
+        .http_only(true)
+        .same_site(axum_extra::extract::cookie::SameSite::Lax)
+        .max_age(cookie::time::Duration::minutes(10))
+        .build();
+
+    (jar.add(cookie), Redirect::to(auth_url.as_str()))
 }
 
 pub async fn callback(
     State(state): State<Arc<AppState>>,
-    jar: CookieJar,
+    mut jar: CookieJar,
     Query(query): Query<AuthCallback>,
 ) -> Response {
+    let expected_state = jar
+        .get("oauth_state")
+        .and_then(|c| Some(c.value().to_string()));
+    jar = jar.remove(
+        Cookie::build(("oauth_state", ""))
+            .path("/api/auth")
+            .max_age(cookie::time::Duration::ZERO)
+            .build(),
+    );
+    if expected_state.as_deref() != Some(query.state.as_str()) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiError::new("Invalid state parameter")),
+        )
+            .into_response();
+    }
+
     let http_client = oauth2::reqwest::Client::builder()
         .redirect(oauth2::reqwest::redirect::Policy::none())
         .build()
@@ -115,7 +146,7 @@ pub async fn callback(
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(format!("Token exchange failed: {}", e)),
+                Json(ApiError::new(format!("Token exchange failed: {}", e))),
             )
                 .into_response();
         }
@@ -133,7 +164,7 @@ pub async fn callback(
             Err(e) => {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(format!("Failed to parse user info: {}", e)),
+                    Json(ApiError::new(format!("Failed to parse user info: {}", e))),
                 )
                     .into_response();
             }
@@ -141,7 +172,7 @@ pub async fn callback(
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(format!("Failed to fetch user info: {}", e)),
+                Json(ApiError::new(format!("Failed to fetch user info: {}", e))),
             )
                 .into_response();
         }
@@ -166,17 +197,18 @@ pub async fn callback(
         .same_site(axum_extra::extract::cookie::SameSite::Lax)
         .build();
 
-    (jar.add(cookie), Redirect::to("/")).into_response()
+    let redirect_url = state.frontend_url.clone();
+    (jar.add(cookie), Redirect::to(&redirect_url)).into_response()
 }
 
-pub async fn logout(jar: CookieJar) -> impl IntoResponse {
+pub async fn logout(State(state): State<Arc<AppState>>, jar: CookieJar) -> impl IntoResponse {
     let cookie = Cookie::build(("session", ""))
         .path("/")
         .http_only(true)
         .max_age(cookie::time::Duration::ZERO)
         .build();
 
-    (jar.add(cookie), Redirect::to("/"))
+    (jar.add(cookie), Redirect::to(&state.frontend_url))
 }
 
 pub async fn me(
@@ -184,9 +216,9 @@ pub async fn me(
     jar: CookieJar,
 ) -> impl IntoResponse {
     if let Some(user) = get_current_user(&jar, &state) {
-        Json(serde_json::to_value(user).unwrap()).into_response()
+        Json(user).into_response()
     } else {
-        Json(serde_json::json!(null)).into_response()
+        Json(Option::<AuthUser>::None).into_response()
     }
 }
 
@@ -206,9 +238,76 @@ pub fn get_current_user(jar: &CookieJar, state: &Arc<AppState>) -> Option<AuthUs
     })
 }
 
-#[allow(dead_code)]
 pub fn is_editor(jar: &CookieJar, state: &Arc<AppState>) -> bool {
     get_current_user(jar, state)
         .map(|u| u.is_editor)
         .unwrap_or(false)
+}
+
+/// Extractor that requires an authenticated user (any logged-in user).
+pub struct RequireAuth(pub AuthUser);
+
+impl<S> FromRequestParts<S> for RequireAuth
+where
+    S: Send + Sync,
+    Arc<AppState>: FromRef<S>,
+{
+    type Rejection = (StatusCode, Json<ApiError>);
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let app_state = Arc::from_ref(state);
+        let jar = CookieJar::from_request_parts(parts, &())
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiError::new("Failed to read cookies")),
+                )
+            })?;
+        let user = get_current_user(&jar, &app_state).ok_or((
+            StatusCode::UNAUTHORIZED,
+            Json(ApiError::new("Login required")),
+        ))?;
+        Ok(RequireAuth(user))
+    }
+}
+
+/// Extractor that requires an authenticated editor.
+pub struct RequireEditor(pub AuthUser);
+
+impl<S> FromRequestParts<S> for RequireEditor
+where
+    S: Send + Sync,
+    Arc<AppState>: FromRef<S>,
+{
+    type Rejection = (StatusCode, Json<ApiError>);
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let app_state = Arc::from_ref(state);
+        let jar = CookieJar::from_request_parts(parts, &())
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiError::new("Failed to read cookies")),
+                )
+            })?;
+        let user = get_current_user(&jar, &app_state).ok_or((
+            StatusCode::UNAUTHORIZED,
+            Json(ApiError::new("Login required")),
+        ))?;
+        if !user.is_editor {
+            return Err((
+                StatusCode::FORBIDDEN,
+                Json(ApiError::new("Editor access required")),
+            ));
+        }
+        Ok(RequireEditor(user))
+    }
 }

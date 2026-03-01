@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../api';
+  import { api, staticUrl } from '../api';
   import type { City, Day, AuthUser } from '../types';
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -13,12 +13,13 @@
   let cityDays = $derived(days.filter(d => d.city_key === key));
 
   $effect(() => {
-    loadData();
+    const cityKey = key;
+    loadData(cityKey);
   });
 
-  async function loadData() {
+  async function loadData(cityKey: string) {
     [city, days] = await Promise.all([
-      api.cities.get(key),
+      api.cities.get(cityKey),
       api.days.list(),
     ]);
   }
@@ -53,7 +54,7 @@
       onUpload={(url) => updateField({ hero_image: url })}
     />
   {:else if city.hero_image}
-    <img src="http://localhost:8080{city.hero_image}" alt={city.name} class="hero-image" />
+    <img src={staticUrl(city.hero_image)} alt={city.name} class="hero-image" />
   {/if}
 
   <div class="detail-grid">

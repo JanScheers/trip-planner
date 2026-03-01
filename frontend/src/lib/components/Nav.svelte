@@ -15,6 +15,7 @@
       <div class="nav-links">
         <a href="#/" class="nav-link">Home</a>
         <a href="#/days" class="nav-link">Itinerary</a>
+        <a href="#/cities" class="nav-link">Cities</a>
       </div>
     </div>
     <div class="nav-right">

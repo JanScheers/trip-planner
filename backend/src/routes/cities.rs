@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use crate::auth::AppState;
+use crate::auth::{AppState, RequireEditor};
+use crate::error::{internal, not_found};
 use crate::models::*;
 
 pub async fn get_cities(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -25,13 +25,14 @@ pub async fn get_city(
         .fetch_optional(&state.pool)
         .await
     {
-        Ok(Some(city)) => Json(serde_json::to_value(city).unwrap()).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json("City not found")).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(Some(city)) => Json(city).into_response(),
+        Ok(None) => not_found("City not found"),
+        Err(e) => internal(e.to_string()),
     }
 }
 
 pub async fn update_city(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
     Json(body): Json<UpdateCity>,
@@ -43,10 +44,8 @@ pub async fn update_city(
 
     let existing = match existing {
         Ok(Some(c)) => c,
-        Ok(None) => return (StatusCode::NOT_FOUND, Json("City not found")).into_response(),
-        Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response()
-        }
+        Ok(None) => return not_found("City not found"),
+        Err(e) => return internal(e.to_string()),
     };
 
     let name = body.name.as_deref().unwrap_or(&existing.name);
@@ -70,7 +69,7 @@ pub async fn update_city(
     .fetch_one(&state.pool)
     .await
     {
-        Ok(city) => Json(serde_json::to_value(city).unwrap()).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(city) => Json(city).into_response(),
+        Err(e) => internal(e.to_string()),
     }
 }

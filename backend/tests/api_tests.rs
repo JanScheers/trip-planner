@@ -1,11 +1,20 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use cookie::Cookie;
 use axum_test::TestServer;
 use sqlx::SqlitePool;
 
 use backend::auth::AppState;
+use backend::db;
+use backend::models::AuthState;
 use backend::routes;
+
+const TEST_EDITOR_SESSION: &str = "test-editor-session";
+
+fn editor_cookie() -> Cookie<'static> {
+    Cookie::build(("session", TEST_EDITOR_SESSION)).path("/").build().into_owned()
+}
 
 async fn setup_pool() -> SqlitePool {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
@@ -13,60 +22,17 @@ async fn setup_pool() -> SqlitePool {
         .await
         .expect("Failed to create in-memory pool");
 
-    sqlx::query(
-        "CREATE TABLE cities (
-            key TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            chinese_name TEXT NOT NULL DEFAULT '',
-            notes TEXT NOT NULL DEFAULT '',
-            emoji TEXT,
-            hero_image TEXT
-        )",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+    db::run_migrations(&pool).await;
 
-    sqlx::query(
-        "CREATE TABLE accommodations (
-            key TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            link TEXT NOT NULL DEFAULT '',
-            notes TEXT NOT NULL DEFAULT '',
-            emoji TEXT,
-            hero_image TEXT
-        )",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    sqlx::query(
-        "CREATE TABLE days (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL UNIQUE,
-            city_key TEXT NOT NULL,
-            accommodation_key TEXT,
-            notes TEXT NOT NULL DEFAULT '',
-            emoji TEXT,
-            hero_image TEXT,
-            FOREIGN KEY (city_key) REFERENCES cities(key),
-            FOREIGN KEY (accommodation_key) REFERENCES accommodations(key)
-        )",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    sqlx::query("INSERT INTO cities (key, name, chinese_name) VALUES ('beijing', 'Beijing', '北京')")
+    sqlx::query("INSERT OR IGNORE INTO cities (key, name, chinese_name) VALUES ('beijing', 'Beijing', '北京')")
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("INSERT INTO cities (key, name, chinese_name) VALUES ('xian', 'Xi''an', '西安')")
+    sqlx::query("INSERT OR IGNORE INTO cities (key, name, chinese_name) VALUES ('xian', 'Xi''an', '西安')")
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("INSERT INTO accommodations (key, name) VALUES ('hotel-a', 'Hotel Alpha')")
+    sqlx::query("INSERT OR IGNORE INTO accommodations (key, name, link, notes) VALUES ('hotel-a', 'Hotel Alpha', '', '')")
         .execute(&pool)
         .await
         .unwrap();
@@ -75,11 +41,21 @@ async fn setup_pool() -> SqlitePool {
 }
 
 async fn setup_server(pool: SqlitePool) -> TestServer {
+    let mut sessions = HashMap::new();
+    sessions.insert(
+        TEST_EDITOR_SESSION.to_string(),
+        AuthState {
+            email: "editor@test.com".to_string(),
+            name: "Editor".to_string(),
+            picture: None,
+        },
+    );
     let state = Arc::new(AppState {
         oauth_client: backend::auth::build_oauth_client(),
-        editor_emails: vec![],
+        editor_emails: vec!["editor@test.com".to_string()],
         pool,
-        sessions: Mutex::new(HashMap::new()),
+        sessions: Mutex::new(sessions),
+        frontend_url: "http://localhost:5173".to_string(),
     });
 
     let app = routes::router().with_state(state);
@@ -105,6 +81,7 @@ async fn test_create_and_get_day() {
 
     let resp = server
         .post("/api/days")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "date": "2026-10-01",
             "city_key": "beijing",
@@ -133,6 +110,7 @@ async fn test_update_day() {
 
     let resp = server
         .post("/api/days")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "date": "2026-10-01",
             "city_key": "beijing",
@@ -144,6 +122,7 @@ async fn test_update_day() {
 
     let resp = server
         .put(&format!("/api/days/{id}"))
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "notes": "Arrived in Beijing!",
             "emoji": "🏯"
@@ -163,6 +142,7 @@ async fn test_delete_day() {
 
     let resp = server
         .post("/api/days")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "date": "2026-10-01",
             "city_key": "beijing",
@@ -172,7 +152,11 @@ async fn test_delete_day() {
     let day: serde_json::Value = resp.json();
     let id = day["id"].as_i64().unwrap();
 
-    server.delete(&format!("/api/days/{id}")).await.assert_status_ok();
+    server
+        .delete(&format!("/api/days/{id}"))
+        .add_cookie(editor_cookie())
+        .await
+        .assert_status_ok();
 
     let resp = server.get(&format!("/api/days/{id}")).await;
     resp.assert_status(axum::http::StatusCode::NOT_FOUND);
@@ -225,6 +209,7 @@ async fn test_update_city() {
 
     let resp = server
         .put("/api/cities/beijing")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "notes": "Capital city",
             "emoji": "🇨🇳"
@@ -258,6 +243,7 @@ async fn test_create_accommodation() {
 
     let resp = server
         .post("/api/accommodations")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "key": "hotel-b",
             "name": "Hotel Beta"
@@ -276,6 +262,7 @@ async fn test_update_accommodation() {
 
     let resp = server
         .put("/api/accommodations/hotel-a")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "link": "https://example.com",
             "notes": "Great place"
@@ -294,6 +281,7 @@ async fn test_delete_accommodation() {
 
     server
         .delete("/api/accommodations/hotel-a")
+        .add_cookie(editor_cookie())
         .await
         .assert_status_ok();
 
@@ -305,17 +293,28 @@ async fn test_delete_accommodation() {
 async fn test_delete_accommodation_not_found() {
     let server = setup_server(setup_pool().await).await;
 
-    let resp = server.delete("/api/accommodations/nonexistent").await;
+    let resp = server
+        .delete("/api/accommodations/nonexistent")
+        .add_cookie(editor_cookie())
+        .await;
     resp.assert_status(axum::http::StatusCode::NOT_FOUND);
 }
 
 // --- Export ---
 
 #[tokio::test]
-async fn test_export_tsv_empty() {
+async fn test_export_requires_auth() {
     let server = setup_server(setup_pool().await).await;
 
     let resp = server.get("/api/export").await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_export_tsv_empty() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server.get("/api/export").add_cookie(editor_cookie()).await;
     resp.assert_status_ok();
 
     let text = resp.text();
@@ -329,6 +328,7 @@ async fn test_export_tsv_with_data() {
 
     server
         .post("/api/days")
+        .add_cookie(editor_cookie())
         .json(&serde_json::json!({
             "date": "2026-10-01",
             "city_key": "beijing",
@@ -336,7 +336,7 @@ async fn test_export_tsv_with_data() {
         }))
         .await;
 
-    let resp = server.get("/api/export").await;
+    let resp = server.get("/api/export").add_cookie(editor_cookie()).await;
     let text = resp.text();
 
     assert_eq!(text.lines().count(), 2);

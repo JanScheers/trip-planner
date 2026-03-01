@@ -34,19 +34,25 @@ async fn main() {
 
     let oauth_client = auth::build_oauth_client();
 
+    let frontend_url = std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:5173".to_string());
+
+    // Sessions are in-memory: they are lost on restart and not shared across instances.
+    // For production with multiple instances, use a shared store (e.g. Redis or DB).
     let app_state = Arc::new(AppState {
         oauth_client,
         editor_emails,
         pool: pool.clone(),
         sessions: Mutex::new(HashMap::new()),
+        frontend_url: frontend_url.clone(),
     });
 
     std::fs::create_dir_all("static").ok();
 
+    let cors_origin = frontend_url
+        .parse()
+        .unwrap_or_else(|_| "http://localhost:5173".parse().unwrap());
     let cors = CorsLayer::new()
-        .allow_origin(AllowOrigin::exact(
-            "http://localhost:5173".parse().unwrap(),
-        ))
+        .allow_origin(AllowOrigin::exact(cors_origin))
         .allow_methods(AllowMethods::list([
             http::Method::GET,
             http::Method::POST,

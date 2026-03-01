@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use crate::auth::AppState;
+use crate::auth::{AppState, RequireEditor};
+use crate::error::{bad_request, internal, not_found};
 use crate::models::*;
 
 pub async fn get_days(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -25,13 +25,14 @@ pub async fn get_day(
         .fetch_optional(&state.pool)
         .await
     {
-        Ok(Some(day)) => Json(serde_json::to_value(day).unwrap()).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json("Day not found")).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(Some(day)) => Json(day).into_response(),
+        Ok(None) => not_found("Day not found"),
+        Err(e) => internal(e.to_string()),
     }
 }
 
 pub async fn create_day(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateDay>,
 ) -> impl IntoResponse {
@@ -44,12 +45,13 @@ pub async fn create_day(
     .fetch_one(&state.pool)
     .await
     {
-        Ok(day) => (StatusCode::CREATED, Json(serde_json::to_value(day).unwrap())).into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, Json(e.to_string())).into_response(),
+        Ok(day) => (axum::http::StatusCode::CREATED, Json(day)).into_response(),
+        Err(e) => bad_request(e.to_string()),
     }
 }
 
 pub async fn update_day(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Path(id): Path<i64>,
     Json(body): Json<UpdateDay>,
@@ -61,10 +63,8 @@ pub async fn update_day(
 
     let existing = match existing {
         Ok(Some(d)) => d,
-        Ok(None) => return (StatusCode::NOT_FOUND, Json("Day not found")).into_response(),
-        Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response()
-        }
+        Ok(None) => return not_found("Day not found"),
+        Err(e) => return internal(e.to_string()),
     };
 
     let date = body.date.as_deref().unwrap_or(&existing.date);
@@ -90,12 +90,13 @@ pub async fn update_day(
     .fetch_one(&state.pool)
     .await
     {
-        Ok(day) => Json(serde_json::to_value(day).unwrap()).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(day) => Json(day).into_response(),
+        Err(e) => internal(e.to_string()),
     }
 }
 
 pub async fn delete_day(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Path(id): Path<i64>,
 ) -> impl IntoResponse {
@@ -105,7 +106,7 @@ pub async fn delete_day(
         .await
     {
         Ok(result) if result.rows_affected() > 0 => Json("Deleted").into_response(),
-        Ok(_) => (StatusCode::NOT_FOUND, Json("Day not found")).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(_) => not_found("Day not found"),
+        Err(e) => internal(e.to_string()),
     }
 }

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use crate::auth::AppState;
+use crate::auth::{AppState, RequireEditor};
+use crate::error::{bad_request, internal, not_found};
 use crate::models::*;
 
 pub async fn get_accommodations(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -25,13 +25,14 @@ pub async fn get_accommodation(
         .fetch_optional(&state.pool)
         .await
     {
-        Ok(Some(acc)) => Json(serde_json::to_value(acc).unwrap()).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json("Accommodation not found")).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(Some(acc)) => Json(acc).into_response(),
+        Ok(None) => not_found("Accommodation not found"),
+        Err(e) => internal(e.to_string()),
     }
 }
 
 pub async fn create_accommodation(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateAccommodation>,
 ) -> impl IntoResponse {
@@ -43,16 +44,13 @@ pub async fn create_accommodation(
     .fetch_one(&state.pool)
     .await
     {
-        Ok(acc) => (
-            StatusCode::CREATED,
-            Json(serde_json::to_value(acc).unwrap()),
-        )
-            .into_response(),
-        Err(e) => (StatusCode::BAD_REQUEST, Json(e.to_string())).into_response(),
+        Ok(acc) => (axum::http::StatusCode::CREATED, Json(acc)).into_response(),
+        Err(e) => bad_request(e.to_string()),
     }
 }
 
 pub async fn update_accommodation(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
     Json(body): Json<UpdateAccommodation>,
@@ -65,12 +63,8 @@ pub async fn update_accommodation(
 
     let existing = match existing {
         Ok(Some(a)) => a,
-        Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json("Accommodation not found")).into_response()
-        }
-        Err(e) => {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response()
-        }
+        Ok(None) => return not_found("Accommodation not found"),
+        Err(e) => return internal(e.to_string()),
     };
 
     let name = body.name.as_deref().unwrap_or(&existing.name);
@@ -91,12 +85,13 @@ pub async fn update_accommodation(
     .fetch_one(&state.pool)
     .await
     {
-        Ok(acc) => Json(serde_json::to_value(acc).unwrap()).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(acc) => Json(acc).into_response(),
+        Err(e) => internal(e.to_string()),
     }
 }
 
 pub async fn delete_accommodation(
+    _editor: RequireEditor,
     State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
 ) -> impl IntoResponse {
@@ -106,7 +101,7 @@ pub async fn delete_accommodation(
         .await
     {
         Ok(result) if result.rows_affected() > 0 => Json("Deleted").into_response(),
-        Ok(_) => (StatusCode::NOT_FOUND, Json("Accommodation not found")).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(e.to_string())).into_response(),
+        Ok(_) => not_found("Accommodation not found"),
+        Err(e) => internal(e.to_string()),
     }
 }

@@ -6,6 +6,7 @@
   import Home from './lib/components/Home.svelte';
   import BasicView from './lib/components/BasicView.svelte';
   import DayView from './lib/components/DayView.svelte';
+  import CitiesView from './lib/components/CitiesView.svelte';
   import CityView from './lib/components/CityView.svelte';
   import AccommodationView from './lib/components/AccommodationView.svelte';
 
@@ -30,6 +31,8 @@
     <Home />
   {:else if route.page === 'basic'}
     <BasicView {user} />
+  {:else if route.page === 'cities'}
+    <CitiesView />
   {:else if route.page === 'day'}
     <DayView id={Number(route.params.id)} {user} />
   {:else if route.page === 'city'}
