@@ -80,6 +80,7 @@ button {
   background: transparent;
   color: var(--gold);
   border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
 }
 
 .btn-outline:hover {

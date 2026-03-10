@@ -272,14 +272,31 @@
     color: rgba(255, 255, 255, 0.35) !important;
   }
   :global(.maplibregl-ctrl-group) {
-    background: #1a1a24 !important;
-    border: 1px solid rgba(212, 168, 67, 0.2) !important;
-    box-shadow: none !important;
+    background: #161622 !important;
+    border: 1px solid rgba(212, 168, 67, 0.25) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden;
   }
   :global(.maplibregl-ctrl-group button) {
     background-color: transparent !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.2s ease !important;
+  }
+  :global(.maplibregl-ctrl-group button:hover) {
+    background-color: rgba(212, 168, 67, 0.1) !important;
+  }
+  :global(.maplibregl-ctrl-group button:active) {
+    background-color: rgba(212, 168, 67, 0.2) !important;
+  }
+  :global(.maplibregl-ctrl-group button + button) {
+    border-top: 1px solid rgba(212, 168, 67, 0.15) !important;
   }
   :global(.maplibregl-ctrl-icon) {
-    filter: invert(1) sepia(1) saturate(2) hue-rotate(5deg) brightness(0.9);
+    filter: brightness(0) invert(1) sepia(1) saturate(2.5) hue-rotate(5deg) brightness(0.85);
   }
 </style>

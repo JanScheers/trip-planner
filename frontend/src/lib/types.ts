@@ -3,6 +3,7 @@ export interface Day {
   date: string;
   city_key: string;
   accommodation_key: string | null;
+  tagline: string;
   notes: string;
   emoji: string | null;
   hero_image: string | null;
@@ -18,6 +19,7 @@ export interface UpdateDay {
   date?: string;
   city_key?: string;
   accommodation_key?: string | null;
+  tagline?: string;
   notes?: string;
   emoji?: string | null;
   hero_image?: string | null;
@@ -27,8 +29,8 @@ export interface City {
   key: string;
   name: string;
   chinese_name: string;
+  tagline: string;
   description: string;
-  notes: string;
   emoji: string | null;
   hero_image: string | null;
   lat: number | null;
@@ -38,8 +40,8 @@ export interface City {
 export interface UpdateCity {
   name?: string;
   chinese_name?: string;
+  tagline?: string;
   description?: string;
-  notes?: string;
   emoji?: string | null;
   hero_image?: string | null;
   lat?: number | null;

@@ -18,12 +18,6 @@
   }
 </script>
 
-<a href="#/" class="back-link">&larr; Back to Home</a>
-
-<div class="page-header">
-  <h1>Cities</h1>
-</div>
-
 <div class="city-list card">
   {#if cities.length === 0}
     <p class="text-muted">Loading...</p>

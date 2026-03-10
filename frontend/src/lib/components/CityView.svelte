@@ -4,12 +4,12 @@
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
 
-  let { key, user }: { key: string; user: AuthUser | null } = $props();
+  let { key, user, editMode }: { key: string; user: AuthUser | null; editMode: boolean } = $props();
 
   let city: City | null = $state(null);
   let days: Day[] = $state([]);
 
-  let canEdit = $derived(user?.is_editor ?? false);
+  let canEdit = $derived(editMode);
   let cityDays = $derived(days.filter(d => d.city_key === key));
 
   $effect(() => {
@@ -44,6 +44,9 @@
       <h1>{city.name}</h1>
       {#if city.chinese_name}
         <span class="chinese-name chinese-text">{city.chinese_name}</span>
+      {/if}
+      {#if city.tagline}
+        <p class="city-tagline">{city.tagline}</p>
       {/if}
     </div>
   </div>
@@ -91,6 +94,16 @@
             style="max-width: 80px;"
           />
         </div>
+        <div class="field-group">
+          <label for="city-tagline">Tagline</label>
+          <input
+            id="city-tagline"
+            type="text"
+            value={city.tagline}
+            onchange={(e) => updateField({ tagline: (e.target as HTMLInputElement).value })}
+            placeholder="e.g. The Forbidden City, Great Wall & imperial grandeur"
+          />
+        </div>
       </div>
     {/if}
 
@@ -100,15 +113,6 @@
         value={city.description}
         readonly={!canEdit}
         onSave={(val) => updateField({ description: val })}
-      />
-    </div>
-
-    <div class="card">
-      <h3 class="section-title">Notes</h3>
-      <MarkdownEditor
-        value={city.notes}
-        readonly={!canEdit}
-        onSave={(val) => updateField({ notes: val })}
       />
     </div>
 
@@ -140,6 +144,13 @@
   .chinese-name {
     font-size: 18px;
     color: var(--text-secondary);
+  }
+
+  .city-tagline {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 4px;
   }
 
   .detail-grid {

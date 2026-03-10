@@ -4,12 +4,12 @@
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
 
-  let { key, user }: { key: string; user: AuthUser | null } = $props();
+  let { key, user, editMode }: { key: string; user: AuthUser | null; editMode: boolean } = $props();
 
   let acc: Accommodation | null = $state(null);
   let days: Day[] = $state([]);
 
-  let canEdit = $derived(user?.is_editor ?? false);
+  let canEdit = $derived(editMode);
   let accDays = $derived(days.filter(d => d.accommodation_key === key));
 
   $effect(() => {

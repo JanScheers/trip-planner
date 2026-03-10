@@ -2,7 +2,7 @@
   import type { AuthUser } from '../types';
   import { api } from '../api';
 
-  let { user }: { user: AuthUser | null } = $props();
+  let { user, editMode, ontoggleedit }: { user: AuthUser | null; editMode: boolean; ontoggleedit: () => void } = $props();
 </script>
 
 <nav>
@@ -13,7 +13,6 @@
         <span class="brand-text">China 2026</span>
       </a>
       <div class="nav-links">
-        <a href="#/" class="nav-link">Home</a>
         <a href="#/days" class="nav-link">Itinerary</a>
         <a href="#/cities" class="nav-link">Cities</a>
       </div>
@@ -25,7 +24,9 @@
         {/if}
         <span class="user-name">{user.name}</span>
         {#if user.is_editor}
-          <span class="editor-badge">Editor</span>
+          <button class="edit-toggle" class:active={editMode} onclick={ontoggleedit}>
+            {editMode ? 'Editing' : 'Edit'}
+          </button>
         {/if}
         <a href={api.auth.logoutUrl} class="btn-outline btn-sm">Logout</a>
       {:else}
@@ -52,6 +53,7 @@
     justify-content: space-between;
     padding-top: 12px;
     padding-bottom: 12px;
+    max-width: 1400px;
   }
 
   .nav-left {
@@ -129,16 +131,29 @@
     color: var(--text-secondary);
   }
 
-  .editor-badge {
+  .edit-toggle {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: var(--gold-glow);
-    color: var(--gold);
-    padding: 2px 8px;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 3px 10px;
     border-radius: 99px;
     font-weight: 600;
-    border: 1px solid var(--border-gold);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+
+  .edit-toggle:hover {
+    color: var(--gold);
+    border-color: var(--border-gold);
+  }
+
+  .edit-toggle.active {
+    background: var(--gold-glow);
+    color: var(--gold);
+    border-color: var(--border-gold);
   }
 
   @media (max-width: 600px) {

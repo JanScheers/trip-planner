@@ -1,9 +1,10 @@
 <script lang="ts">
   import { api } from '../api';
   import { getCityColor } from '../cityColors';
+  import { navigate } from '../router';
   import type { Day, City, Accommodation, AuthUser } from '../types';
 
-  let { user }: { user: AuthUser | null } = $props();
+  let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
 
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
@@ -23,7 +24,7 @@
 
   let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
   let accMap = $derived(Object.fromEntries(accommodations.map(a => [a.key, a])));
-  let canEdit = $derived(user?.is_editor ?? false);
+  let canEdit = $derived(editMode);
 
   async function updateDayCity(day: Day, cityKey: string) {
     await api.days.update(day.id, { city_key: cityKey });
@@ -62,33 +63,42 @@
   }
 </script>
 
-<div class="page-header">
-  <h1>Itinerary</h1>
-  <div class="header-actions">
-    <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank">Export TSV</a>
-  </div>
-</div>
-
 <div class="card table-card">
   <table>
     <thead>
       <tr>
-        <th class="col-num">#</th>
+        <th class="col-emoji"></th>
         <th>Date</th>
         <th>City</th>
         <th>Accommodation</th>
-        <th class="col-emoji"></th>
-        {#if canEdit}<th class="col-actions"></th>{/if}
+        {#if canEdit}
+          <th class="col-actions">
+            <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank">Export TSV</a>
+          </th>
+        {/if}
       </tr>
     </thead>
     <tbody>
       {#each days as day, i}
         {@const prevCity = i > 0 ? days[i - 1].city_key : null}
         {@const isNewCity = day.city_key !== prevCity}
-        <tr class:new-city={isNewCity}>
-          <td class="day-num">{i + 1}</td>
+        <tr
+          class="clickable-row"
+          class:new-city={isNewCity}
+          style="--city-color: {getCityColor(day.city_key, cities)};"
+          onclick={(e: MouseEvent) => {
+            if ((e.target as HTMLElement).closest('select, button, a')) return;
+            navigate(`/days/${day.id}`);
+          }}
+        >
+          <td class="col-emoji">
+            {#if day.emoji}<span>{day.emoji}</span>{:else}<span class="day-num">{i + 1}</span>{/if}
+          </td>
           <td>
-            <a href="#/days/{day.id}" class="date-link">{formatDate(day.date)}</a>
+            <span class="date-text">{formatDate(day.date)}</span>
+            {#if day.tagline}
+              <div class="day-tagline">{day.tagline}</div>
+            {/if}
           </td>
           <td>
             {#if canEdit}
@@ -101,10 +111,7 @@
                 {/each}
               </select>
             {:else}
-              <a href="#/cities/{day.city_key}" class="city-link">
-                <span class="city-indicator" style="background: {getCityColor(day.city_key, cities)};"></span>
-                {#if cityMap[day.city_key]?.emoji}{cityMap[day.city_key].emoji} {/if}{cityMap[day.city_key]?.name || day.city_key}
-              </a>
+              {cityMap[day.city_key]?.name || day.city_key}
             {/if}
           </td>
           <td>
@@ -119,18 +126,13 @@
                 {/each}
               </select>
             {:else if day.accommodation_key}
-              <a href="#/accommodations/{day.accommodation_key}">
-                {accMap[day.accommodation_key]?.name || day.accommodation_key}
-              </a>
+              <span>{accMap[day.accommodation_key]?.name || day.accommodation_key}</span>
             {:else}
               <span class="text-muted">—</span>
             {/if}
           </td>
-          <td class="col-emoji">
-            {#if day.emoji}<span>{day.emoji}</span>{/if}
-          </td>
           {#if canEdit}
-            <td>
+            <td class="col-actions">
               <button class="btn-danger btn-sm" onclick={() => deleteDay(day.id)}>×</button>
             </td>
           {/if}
@@ -147,13 +149,14 @@
 {/if}
 
 <style>
-  .header-actions {
-    margin-left: auto;
-  }
-
   .table-card {
     overflow-x: auto;
     padding: 0;
+  }
+
+  .col-actions {
+    text-align: right;
+    white-space: nowrap;
   }
 
   table {
@@ -177,9 +180,21 @@
     padding: 12px 16px;
   }
 
-  .col-num { width: 40px; }
   .col-emoji { width: 40px; text-align: center; }
-  .col-actions { width: 50px; }
+
+  .clickable-row {
+    cursor: pointer;
+    background: color-mix(in srgb, var(--city-color) 6%, transparent);
+    transition: background 0.15s ease;
+  }
+
+  .clickable-row:hover {
+    background: color-mix(in srgb, var(--city-color) 16%, transparent);
+  }
+
+  .clickable-row:hover :global(td) {
+    background: transparent;
+  }
 
   .day-num {
     color: var(--text-muted);
@@ -188,22 +203,15 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .date-link {
+  .date-text {
     white-space: nowrap;
     font-weight: 500;
   }
 
-  .city-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .city-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  .day-tagline {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 2px;
   }
 
   .new-city td {

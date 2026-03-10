@@ -233,14 +233,14 @@ async fn test_update_city() {
         .put("/api/cities/beijing")
         .add_cookie(editor_cookie())
         .json(&serde_json::json!({
-            "notes": "Capital city",
+            "tagline": "Capital city",
             "emoji": "🇨🇳"
         }))
         .await;
     resp.assert_status_ok();
 
     let city: serde_json::Value = resp.json();
-    assert_eq!(city["notes"], "Capital city");
+    assert_eq!(city["tagline"], "Capital city");
     assert_eq!(city["emoji"], "🇨🇳");
     assert_eq!(city["name"], "Beijing");
 }
@@ -393,7 +393,7 @@ async fn test_update_city_requires_auth() {
     let server = setup_server(setup_pool().await).await;
     let resp = server
         .put("/api/cities/beijing")
-        .json(&serde_json::json!({"notes": "Capital city"}))
+        .json(&serde_json::json!({"tagline": "Capital city"}))
         .await;
     resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
 }
@@ -404,7 +404,7 @@ async fn test_update_city_viewer_gets_403() {
     let resp = server
         .put("/api/cities/beijing")
         .add_cookie(viewer_cookie())
-        .json(&serde_json::json!({"notes": "Capital city"}))
+        .json(&serde_json::json!({"tagline": "Capital city"}))
         .await;
     resp.assert_status(axum::http::StatusCode::FORBIDDEN);
 }

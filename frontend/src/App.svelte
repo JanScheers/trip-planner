@@ -12,6 +12,7 @@
 
   let route: Route = $state(parseHash());
   let user: AuthUser | null = $state(null);
+  let editMode: boolean = $state(false);
 
   $effect(() => {
     const handler = () => { route = parseHash(); };
@@ -24,20 +25,20 @@
   });
 </script>
 
-<Nav {user} />
+<Nav {user} {editMode} ontoggleedit={() => { editMode = !editMode; }} />
 
 <main class="container" style="padding-top: 24px; padding-bottom: 48px;">
   {#if route.page === 'home'}
     <Home />
   {:else if route.page === 'basic'}
-    <BasicView {user} />
+    <BasicView {user} {editMode} />
   {:else if route.page === 'cities'}
     <CitiesView />
   {:else if route.page === 'day'}
-    <DayView id={Number(route.params.id)} {user} />
+    <DayView id={Number(route.params.id)} {user} {editMode} />
   {:else if route.page === 'city'}
-    <CityView key={route.params.key} {user} />
+    <CityView key={route.params.key} {user} {editMode} />
   {:else if route.page === 'accommodation'}
-    <AccommodationView key={route.params.key} {user} />
+    <AccommodationView key={route.params.key} {user} {editMode} />
   {/if}
 </main>

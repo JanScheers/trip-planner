@@ -4,13 +4,13 @@
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
 
-  let { id, user }: { id: number; user: AuthUser | null } = $props();
+  let { id, user, editMode }: { id: number; user: AuthUser | null; editMode: boolean } = $props();
 
   let day: Day | null = $state(null);
   let cities: City[] = $state([]);
   let accommodations: Accommodation[] = $state([]);
 
-  let canEdit = $derived(user?.is_editor ?? false);
+  let canEdit = $derived(editMode);
   let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
   let accMap = $derived(Object.fromEntries(accommodations.map(a => [a.key, a])));
 

@@ -181,7 +181,7 @@
                 {/if}
               </div>
             </div>
-            <p class="city-desc">{city.notes}</p>
+            <p class="city-desc">{city.tagline}</p>
             <div class="city-card-footer">
               <span class="city-days-count"
                 >{days.filter((d) => d.city_key === city.key).length} days</span
