@@ -36,7 +36,7 @@ test.describe('Export TSV', () => {
     await loginAsEditor(context);
     const response = await page.request.get('/api/export');
     const text = await response.text();
-    for (const city of ['beijing', 'xian', 'chengdu', 'chongqing', 'zhangjiajie', 'guilin', 'hongkong']) {
+    for (const city of ['beijing', 'xian', 'emeishan', 'chongqing', 'zhangjiajie', 'guilin', 'hongkong']) {
       expect(text).toContain(city);
     }
   });

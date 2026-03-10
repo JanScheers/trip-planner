@@ -1,6 +1,6 @@
 # China 2026 Trip Planner
 
-21-day trip across 7 cities: Beijing → Xi'an → Chengdu → Chongqing → Zhangjiajie → Guilin → Hong Kong.
+21-day trip across 7 cities: Beijing → Xi'an → Mount Emei → Chongqing → Zhangjiajie → Guilin → Hong Kong.
 
 ## Stack
 

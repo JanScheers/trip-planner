@@ -71,6 +71,7 @@
         <th>Date</th>
         <th>City</th>
         <th>Accommodation</th>
+        <th>Travel</th>
         {#if canEdit}
           <th class="col-actions">
             <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank">Export TSV</a>
@@ -131,6 +132,13 @@
               <span class="text-muted">—</span>
             {/if}
           </td>
+          <td class="col-travel">
+            {#if day.travel}
+              <span class="travel-text">{day.travel}</span>
+            {:else}
+              <span class="text-muted">—</span>
+            {/if}
+          </td>
           {#if canEdit}
             <td class="col-actions">
               <button class="btn-danger btn-sm" onclick={() => deleteDay(day.id)}>×</button>
@@ -152,6 +160,8 @@
   .table-card {
     overflow-x: auto;
     padding: 0;
+    background: var(--gradient-card) !important;
+    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   }
 
   .col-actions {
@@ -165,7 +175,8 @@
 
   th {
     padding: 14px 16px;
-    background: var(--bg-secondary);
+    background: linear-gradient(180deg, var(--bg-hover) 0%, var(--bg-secondary) 100%);
+    color: var(--gold-dim);
   }
 
   th:first-child {
@@ -182,14 +193,25 @@
 
   .col-emoji { width: 40px; text-align: center; }
 
+  .col-travel {
+    max-width: 220px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .travel-text {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
   .clickable-row {
     cursor: pointer;
-    background: color-mix(in srgb, var(--city-color) 6%, transparent);
+    background: color-mix(in srgb, var(--city-color) 8%, var(--bg-card));
     transition: background 0.15s ease;
   }
 
   .clickable-row:hover {
-    background: color-mix(in srgb, var(--city-color) 16%, transparent);
+    background: color-mix(in srgb, var(--city-color) 18%, var(--bg-card));
   }
 
   .clickable-row:hover :global(td) {

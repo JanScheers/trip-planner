@@ -1,24 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;700&display=swap');
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: #161622;
-  --bg-hover: #1e1e30;
-  --gold: #d4a843;
-  --gold-light: #e8c96a;
-  --gold-dim: #8a6d2b;
-  --gold-glow: rgba(212, 168, 67, 0.12);
-  --text-primary: #eae8e2;
-  --text-secondary: #9a9890;
-  --text-muted: #5a5850;
-  --border: #222233;
-  --border-gold: rgba(212, 168, 67, 0.25);
-  --danger: #c0392b;
-  --success: #27ae60;
+  /* Light palette */
+  --bg-primary: #f5f3ef;
+  --bg-primary-end: #ebe8e0;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-start: #fefdfb;
+  --bg-hover: #f8f6f1;
+  --gold: #b8860b;
+  --gold-light: #c99a1a;
+  --gold-soft: #e8d5a3;
+  --gold-dim: #8a6d0a;
+  --gold-glow: rgba(184, 134, 11, 0.12);
+  --gold-gradient: linear-gradient(135deg, #c99a1a 0%, #b8860b 50%, #9a7209 100%);
+  --text-primary: #2c2a26;
+  --text-secondary: #5c5852;
+  --text-muted: #7a756e;
+  --border: #e5e2dc;
+  --border-gold: rgba(184, 134, 11, 0.35);
+  --danger: #b91c1c;
+  --success: #15803d;
   --radius: 8px;
   --radius-lg: 12px;
   --transition: 0.2s ease;
+  /* Gradient tokens */
+  --gradient-page: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-primary-end) 100%);
+  --gradient-card: linear-gradient(180deg, var(--bg-card-start) 0%, var(--bg-card) 100%);
+  --gradient-hero: linear-gradient(180deg, rgba(245, 243, 239, 0.6) 0%, rgba(235, 232, 224, 0.9) 50%, var(--bg-primary) 100%);
 }
 
 * {
@@ -32,7 +41,8 @@ html {
 }
 
 html, body {
-  background: var(--bg-primary);
+  background: var(--gradient-page);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: 'Noto Sans', system-ui, -apple-system, sans-serif;
   font-size: 15px;
@@ -66,14 +76,15 @@ button {
 }
 
 .btn-gold {
-  background: var(--gold);
-  color: var(--bg-primary);
+  background: var(--gold-gradient);
+  color: #fff;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.25);
 }
 
 .btn-gold:hover {
-  background: var(--gold-light);
-  box-shadow: 0 0 24px var(--gold-glow);
+  filter: brightness(1.08);
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.35);
 }
 
 .btn-outline {
@@ -91,11 +102,11 @@ button {
 .btn-danger {
   background: transparent;
   color: var(--danger);
-  border: 1px solid rgba(192, 57, 43, 0.3);
+  border: 1px solid rgba(185, 28, 28, 0.4);
 }
 
 .btn-danger:hover {
-  background: rgba(192, 57, 43, 0.1);
+  background: rgba(185, 28, 28, 0.08);
 }
 
 .btn-sm {
@@ -127,10 +138,11 @@ textarea {
 }
 
 .card {
-  background: var(--bg-card);
+  background: var(--gradient-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
+  box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -181,6 +193,7 @@ tr:hover td {
   border-radius: var(--radius-lg);
   margin-bottom: 20px;
   border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(44, 42, 38, 0.08);
 }
 
 .emoji-large {
@@ -198,19 +211,19 @@ tr:hover td {
 .page-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--text-primary);
 }
 
 .back-link {
   display: inline-block;
   font-size: 13px;
-  opacity: 0.6;
+  color: var(--text-muted);
   margin-bottom: 16px;
-  transition: opacity var(--transition);
+  transition: color var(--transition);
 }
 
 .back-link:hover {
-  opacity: 1;
+  color: var(--gold);
 }
 
 .field-group {
@@ -242,22 +255,24 @@ tr:hover td {
 }
 
 .markdown-content a {
-  color: var(--gold-light);
+  color: var(--gold);
 }
 
 .markdown-content code {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
+  color: var(--text-primary);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 13px;
 }
 
 .markdown-content pre {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
   padding: 12px;
   border-radius: var(--radius);
   overflow-x: auto;
   margin-bottom: 8px;
+  border: 1px solid var(--border);
 }
 
 @media (max-width: 768px) {

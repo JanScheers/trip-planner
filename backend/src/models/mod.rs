@@ -13,6 +13,7 @@ pub struct Day {
     pub notes: String,
     pub emoji: Option<String>,
     pub hero_image: Option<String>,
+    pub travel: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -33,6 +34,7 @@ pub struct UpdateDay {
     pub notes: Option<String>,
     pub emoji: Option<String>,
     pub hero_image: Option<String>,
+    pub travel: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, TS)]

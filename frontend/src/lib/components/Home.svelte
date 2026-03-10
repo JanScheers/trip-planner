@@ -223,17 +223,33 @@
 
   .hero-glow {
     position: absolute;
-    top: -60%;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(
-      circle,
-      rgba(212, 168, 67, 0.08) 0%,
-      transparent 70%
-    );
+    transform: translate(-50%, -50%);
+    /* Cover full hero and beyond on any viewport */
+    width: max(120%, 800px);
+    height: max(140%, 900px);
+    min-width: 100%;
+    min-height: 100%;
+    background:
+      radial-gradient(
+        ellipse 80% 50% at 50% 30%,
+        rgba(232, 213, 163, 0.4) 0%,
+        rgba(184, 134, 11, 0.12) 40%,
+        transparent 70%
+      ),
+      radial-gradient(
+        circle at 30% 40%,
+        rgba(184, 134, 11, 0.08) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 70% 50%,
+        rgba(201, 154, 26, 0.06) 0%,
+        transparent 45%
+      );
     border-radius: 50%;
+    pointer-events: none;
   }
 
   .lantern {
@@ -284,12 +300,13 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.2em;
-    color: var(--gold);
+    color: var(--gold-dim);
     border: 1px solid var(--border-gold);
     padding: 4px 16px;
     border-radius: 99px;
     margin-bottom: 24px;
-    background: var(--gold-glow);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(232, 213, 163, 0.25) 100%);
+    box-shadow: 0 2px 12px rgba(184, 134, 11, 0.1);
   }
 
   .hero-title {
@@ -301,10 +318,12 @@
 
   .title-chinese {
     font-size: 56px;
-    color: var(--gold);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold-dim) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 700;
     letter-spacing: 0.05em;
-    text-shadow: 0 0 60px rgba(212, 168, 67, 0.2);
   }
 
   .hero-subtitle {
@@ -355,10 +374,11 @@
     flex-direction: column;
     align-items: center;
     min-width: 72px;
-    background: var(--bg-card);
+    background: linear-gradient(180deg, #fff 0%, var(--bg-hover) 100%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 12px 8px 10px;
+    box-shadow: 0 2px 8px rgba(44, 42, 38, 0.06);
   }
 
   .countdown-value {
@@ -432,7 +452,10 @@
   }
 
   .section-header h2 {
-    color: var(--gold);
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -448,6 +471,8 @@
     padding: 0;
     margin: 0 20px;
     overflow: hidden;
+    background: linear-gradient(180deg, #fff 0%, var(--bg-card-start) 100%) !important;
+    box-shadow: 0 2px 16px rgba(44, 42, 38, 0.08) !important;
   }
 
   /* --- City Grid --- */
@@ -460,27 +485,28 @@
   .city-card {
     position: relative;
     display: block;
-    background: var(--bg-card);
+    background: linear-gradient(180deg, #fff 0%, var(--bg-card-start) 100%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
     text-decoration: none;
     color: inherit;
     transition: all 0.25s ease;
+    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   }
 
   .city-card:hover {
     border-color: var(--city-color);
     transform: translateY(-3px);
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 12px 32px rgba(44, 42, 38, 0.12),
       0 0 0 1px var(--city-color);
   }
 
   .city-card-accent {
-    height: 3px;
-    background: var(--city-color);
-    opacity: 0.7;
+    height: 4px;
+    background: linear-gradient(90deg, var(--city-color) 0%, color-mix(in srgb, var(--city-color) 80%, white) 100%);
+    opacity: 0.9;
     transition: opacity 0.25s;
   }
 
@@ -622,7 +648,7 @@
 
   .cta-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(212, 168, 67, 0.25);
+    box-shadow: 0 8px 28px rgba(184, 134, 11, 0.35);
   }
 
   /* --- Responsive --- */

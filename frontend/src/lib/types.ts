@@ -7,6 +7,7 @@ export interface Day {
   notes: string;
   emoji: string | null;
   hero_image: string | null;
+  travel: string | null;
 }
 
 export interface CreateDay {
@@ -23,6 +24,7 @@ export interface UpdateDay {
   notes?: string;
   emoji?: string | null;
   hero_image?: string | null;
+  travel?: string | null;
 }
 
 export interface City {

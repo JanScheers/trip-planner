@@ -38,13 +38,14 @@
 
 <style>
   nav {
-    background: rgba(18, 18, 26, 0.85);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 244, 0.98) 100%);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 100;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 2px 20px rgba(44, 42, 38, 0.06);
   }
 
   .nav-inner {
@@ -86,7 +87,7 @@
   }
 
   .nav-link {
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
     position: relative;
@@ -128,7 +129,7 @@
 
   .user-name {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
   }
 
   .edit-toggle {

@@ -37,7 +37,7 @@ pub async fn create_day(
     Json(body): Json<CreateDay>,
 ) -> impl IntoResponse {
     match sqlx::query_as::<_, Day>(
-        "INSERT INTO days (date, city_key, accommodation_key, tagline, notes) VALUES (?, ?, ?, '', '') RETURNING *",
+        "INSERT INTO days (date, city_key, accommodation_key, tagline, notes, travel) VALUES (?, ?, ?, '', '', NULL) RETURNING *",
     )
     .bind(&body.date)
     .bind(&body.city_key)
@@ -77,9 +77,10 @@ pub async fn update_day(
     let notes = body.notes.as_deref().unwrap_or(&existing.notes);
     let emoji = body.emoji.as_ref().or(existing.emoji.as_ref());
     let hero_image = body.hero_image.as_ref().or(existing.hero_image.as_ref());
+    let travel = body.travel.as_ref().or(existing.travel.as_ref());
 
     match sqlx::query_as::<_, Day>(
-        "UPDATE days SET date=?, city_key=?, accommodation_key=?, tagline=?, notes=?, emoji=?, hero_image=? WHERE id=? RETURNING *",
+        "UPDATE days SET date=?, city_key=?, accommodation_key=?, tagline=?, notes=?, emoji=?, hero_image=?, travel=? WHERE id=? RETURNING *",
     )
     .bind(date)
     .bind(city_key)
@@ -88,6 +89,7 @@ pub async fn update_day(
     .bind(notes)
     .bind(emoji)
     .bind(hero_image)
+    .bind(travel)
     .bind(id)
     .fetch_one(&state.pool)
     .await

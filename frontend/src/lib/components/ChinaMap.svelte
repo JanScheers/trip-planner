@@ -66,10 +66,10 @@
       type: "line",
       source: "route",
       paint: {
-        "line-color": "#d4a843",
-        "line-width": 2,
+        "line-color": "#b8860b",
+        "line-width": 2.5,
         "line-dasharray": [5, 4],
-        "line-opacity": 0.55,
+        "line-opacity": 0.7,
       },
     });
 
@@ -87,7 +87,7 @@
         "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-width": 1.5,
         "circle-stroke-color": ["get", "color"],
-        "circle-stroke-opacity": 0.3,
+        "circle-stroke-opacity": 0.5,
       },
     });
 
@@ -100,11 +100,11 @@
         "circle-radius": 6,
         "circle-color": ["get", "color"],
         "circle-stroke-width": 2,
-        "circle-stroke-color": "rgba(0,0,0,0.45)",
+        "circle-stroke-color": "rgba(255,255,255,0.9)",
       },
     });
 
-    // English label above dot
+    // English label above dot (light map: dark text, light halo)
     map.addLayer({
       id: "city-labels",
       type: "symbol",
@@ -119,8 +119,8 @@
         "text-ignore-placement": true,
       },
       paint: {
-        "text-color": "#e8e0c8",
-        "text-halo-color": "rgba(0,0,0,0.85)",
+        "text-color": "#2c2a26",
+        "text-halo-color": "rgba(255,255,255,0.95)",
         "text-halo-width": 1.5,
       },
     });
@@ -141,8 +141,8 @@
         "text-ignore-placement": true,
       },
       paint: {
-        "text-color": "#c8b88a",
-        "text-halo-color": "rgba(0,0,0,0.85)",
+        "text-color": "#5c5852",
+        "text-halo-color": "rgba(255,255,255,0.95)",
         "text-halo-width": 1.5,
       },
     });
@@ -194,10 +194,10 @@
           carto: {
             type: "raster",
             tiles: [
-              "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
-              "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
-              "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
-              "https://d.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png",
+              "https://a.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png",
+              "https://b.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png",
+              "https://c.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png",
+              "https://d.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
             attribution:
@@ -262,20 +262,21 @@
     height: 100%;
   }
 
-  /* ── MapLibre chrome overrides ── */
+  /* ── MapLibre chrome overrides (light mode) ── */
   :global(.maplibregl-ctrl-attrib) {
-    background: rgba(0, 0, 0, 0.55) !important;
-    color: rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #7a756e !important;
     font-size: 10px !important;
+    border: 1px solid var(--border);
   }
   :global(.maplibregl-ctrl-attrib a) {
-    color: rgba(255, 255, 255, 0.35) !important;
+    color: var(--gold) !important;
   }
   :global(.maplibregl-ctrl-group) {
-    background: #161622 !important;
-    border: 1px solid rgba(212, 168, 67, 0.25) !important;
+    background: #fff !important;
+    border: 1px solid var(--border) !important;
     border-radius: 8px !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.1) !important;
     overflow: hidden;
   }
   :global(.maplibregl-ctrl-group button) {
@@ -288,15 +289,15 @@
     transition: background-color 0.2s ease !important;
   }
   :global(.maplibregl-ctrl-group button:hover) {
-    background-color: rgba(212, 168, 67, 0.1) !important;
+    background-color: var(--bg-hover) !important;
   }
   :global(.maplibregl-ctrl-group button:active) {
-    background-color: rgba(212, 168, 67, 0.2) !important;
+    background-color: #e5e2dc !important;
   }
   :global(.maplibregl-ctrl-group button + button) {
-    border-top: 1px solid rgba(212, 168, 67, 0.15) !important;
+    border-top: 1px solid var(--border) !important;
   }
   :global(.maplibregl-ctrl-icon) {
-    filter: brightness(0) invert(1) sepia(1) saturate(2.5) hue-rotate(5deg) brightness(0.85);
+    filter: none;
   }
 </style>

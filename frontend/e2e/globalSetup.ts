@@ -1,7 +1,9 @@
 import { execSync } from 'child_process';
 import { rmSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const E2E_DB = path.resolve(__dirname, '../../backend/e2e-test.db');
 
 export default function globalSetup() {

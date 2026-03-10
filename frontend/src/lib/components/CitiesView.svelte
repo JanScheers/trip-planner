@@ -72,7 +72,7 @@
   }
 
   .city-list-link:hover {
-    background: var(--bg-secondary);
+    background: var(--bg-hover);
     border-left-color: var(--city-color);
   }
 

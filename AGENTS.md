@@ -21,7 +21,6 @@ cargo test           # runs all unit and integration tests
 # From /frontend
 npx vite build       # full build — surfaces all Svelte a11y/compiler warnings
 npm test             # Vitest unit tests (router, api helpers)
-npm run test:e2e     # Playwright — kills any existing backend, reseeds DB, starts both servers
 ```
 
 For each new feature update the tests, and if necessary, update the seed.tsv. Match the size of the feature with the effort put into the tests.

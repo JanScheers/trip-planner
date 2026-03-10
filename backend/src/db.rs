@@ -103,7 +103,7 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         .delimiter(b'\t')
         .from_reader(content.as_bytes());
 
-    // columns: date, city_key, accommodation_key, emoji, notes, tagline
+    // columns: date, city_key, accommodation_key, emoji, notes, tagline, travel (optional)
     for result in reader.records() {
         let record = result.expect("Failed to read days.tsv record");
         let date = record.get(0).unwrap_or("").to_string();
@@ -113,10 +113,11 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         let emoji: Option<String> = record.get(3).filter(|v| !v.is_empty()).map(str::to_string);
         let notes = record.get(4).unwrap_or("").to_string();
         let tagline = record.get(5).unwrap_or("").to_string();
+        let travel: Option<String> = record.get(6).filter(|v| !v.is_empty()).map(str::to_string);
 
         sqlx::query(
-            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, emoji, notes, tagline) \
-             VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, emoji, notes, tagline, travel) \
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&date)
         .bind(&city_key)
@@ -124,6 +125,7 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         .bind(&emoji)
         .bind(&notes)
         .bind(&tagline)
+        .bind(&travel)
         .execute(pool)
         .await
         .expect("Failed to insert day");

@@ -14,16 +14,16 @@ test.describe('Accommodation detail – public view', () => {
     await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 
-  test('chengdu-panda-inn renders correctly', async ({ page }) => {
-    await page.goto('/#/accommodations/chengdu-panda-inn');
-    await expect(page.locator('h1')).toHaveText('Chengdu Panda Inn', { timeout: 10_000 });
+  test('emeishan-baoguo-lodge renders correctly', async ({ page }) => {
+    await page.goto('/#/accommodations/emeishan-baoguo-lodge');
+    await expect(page.locator('h1')).toHaveText('Emeishan Baoguo Temple Lodge', { timeout: 10_000 });
   });
 
-  test('shows 3 nights in chengdu-panda-inn', async ({ page }) => {
-    await page.goto('/#/accommodations/chengdu-panda-inn');
-    await expect(page.locator('h1')).toContainText('Chengdu Panda Inn', { timeout: 10_000 });
-    await expect(page.locator('h3', { hasText: 'Booked for 3 nights' })).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('table tbody tr')).toHaveCount(3, { timeout: 10_000 });
+  test('shows 4 nights in emeishan-baoguo-lodge', async ({ page }) => {
+    await page.goto('/#/accommodations/emeishan-baoguo-lodge');
+    await expect(page.locator('h1')).toContainText('Emeishan Baoguo Temple Lodge', { timeout: 10_000 });
+    await expect(page.locator('h3', { hasText: 'Booked for 4 nights' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 
   test('hongkong-central renders correctly', async ({ page }) => {
