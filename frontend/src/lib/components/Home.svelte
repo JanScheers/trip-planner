@@ -56,6 +56,8 @@
 <div class="home">
   <div class="hero">
     <div class="hero-bg">
+      <div class="hero-bg-image" role="img" aria-label="China travel"></div>
+      <div class="hero-bg-overlay"></div>
       <div class="lantern lantern-1"></div>
       <div class="lantern lantern-2"></div>
       <div class="lantern lantern-3"></div>
@@ -213,12 +215,28 @@
     text-align: center;
     padding: 72px 0 48px;
     overflow: hidden;
+    min-height: 420px;
   }
 
   .hero-bg {
     position: absolute;
     inset: 0;
     pointer-events: none;
+  }
+
+  .hero-bg-image {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .hero-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(44, 42, 38, 0.5) 0%, rgba(44, 42, 38, 0.35) 40%, rgba(245, 243, 239, 0.85) 100%);
   }
 
   .hero-glow {

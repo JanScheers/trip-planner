@@ -57,7 +57,11 @@
       onUpload={(url) => updateField({ hero_image: url })}
     />
   {:else if city.hero_image}
-    <img src={staticUrl(city.hero_image)} alt={city.name} class="hero-image" />
+    <img src={staticUrl(city.hero_image)} alt={city.name} class="hero-image" loading="lazy" />
+  {:else}
+    <div class="hero-placeholder" aria-hidden="true">
+      <span class="hero-placeholder-emoji">{city.emoji || '🏙️'}</span>
+    </div>
   {/if}
 
   <div class="detail-grid">

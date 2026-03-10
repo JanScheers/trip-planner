@@ -13,6 +13,11 @@
   let canEdit = $derived(editMode);
   let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
   let accMap = $derived(Object.fromEntries(accommodations.map(a => [a.key, a])));
+  let displayHeroImage = $derived.by(() => {
+    const d = day;
+    if (!d) return null;
+    return d.hero_image || (cityMap[d.city_key]?.hero_image ?? null) || null;
+  });
 
   $effect(() => {
     const dayId = id;
@@ -59,8 +64,12 @@
       currentImage={day.hero_image}
       onUpload={(url) => updateField({ hero_image: url })}
     />
-  {:else if day.hero_image}
-    <img src={staticUrl(day.hero_image)} alt="Hero" class="hero-image" />
+  {:else if displayHeroImage}
+    <img src={staticUrl(displayHeroImage)} alt="Hero" class="hero-image" loading="lazy" />
+  {:else}
+    <div class="hero-placeholder" aria-hidden="true">
+      <span class="hero-placeholder-emoji">{day.emoji || '📅'}</span>
+    </div>
   {/if}
 
   <div class="detail-grid">

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../api';
+  import { api, staticUrl } from '../api';
   import { getCityColor } from '../cityColors';
   import { navigate } from '../router';
   import type { Day, City, Accommodation, AuthUser } from '../types';
@@ -25,6 +25,9 @@
   let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
   let accMap = $derived(Object.fromEntries(accommodations.map(a => [a.key, a])));
   let canEdit = $derived(editMode);
+  function dayThumbUrl(day: Day): string | null {
+    return day.hero_image || cityMap[day.city_key]?.hero_image || null;
+  }
 
   async function updateDayCity(day: Day, cityKey: string) {
     await api.days.update(day.id, { city_key: cityKey });
@@ -67,6 +70,7 @@
   <table>
     <thead>
       <tr>
+        <th class="col-thumb"></th>
         <th class="col-emoji"></th>
         <th>Date</th>
         <th>City</th>
@@ -83,6 +87,7 @@
       {#each days as day, i}
         {@const prevCity = i > 0 ? days[i - 1].city_key : null}
         {@const isNewCity = day.city_key !== prevCity}
+        {@const thumb = dayThumbUrl(day)}
         <tr
           class="clickable-row"
           class:new-city={isNewCity}
@@ -92,6 +97,13 @@
             navigate(`/days/${day.id}`);
           }}
         >
+          <td class="col-thumb">
+            {#if thumb}
+              <img src={staticUrl(thumb)} alt="" class="day-row-thumb" loading="lazy" />
+            {:else}
+              <span class="day-row-thumb-placeholder">{day.emoji || '📅'}</span>
+            {/if}
+          </td>
           <td class="col-emoji">
             {#if day.emoji}<span>{day.emoji}</span>{:else}<span class="day-num">{i + 1}</span>{/if}
           </td>
@@ -189,6 +201,32 @@
 
   td {
     padding: 12px 16px;
+  }
+
+  .col-thumb {
+    width: 48px;
+    padding: 8px 12px;
+    vertical-align: middle;
+  }
+
+  .day-row-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    display: block;
+    border: 1px solid var(--border);
+  }
+
+  .day-row-thumb-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--gold-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
   }
 
   .col-emoji { width: 40px; text-align: center; }

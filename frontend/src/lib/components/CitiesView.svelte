@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../api';
+  import { api, staticUrl } from '../api';
   import { getCityColor } from '../cityColors';
   import type { City, Day } from '../types';
 
@@ -26,7 +26,11 @@
       {#each cities as city}
         <li>
           <a href="#/cities/{city.key}" class="city-list-link" style="--city-color: {getCityColor(city.key, cities)};">
-            <span class="city-list-dot" style="background: {getCityColor(city.key, cities)};"></span>
+            {#if city.hero_image}
+              <img src={staticUrl(city.hero_image)} alt="" class="city-list-thumb" loading="lazy" />
+            {:else}
+              <span class="city-list-dot" style="background: {getCityColor(city.key, cities)};"></span>
+            {/if}
             <span class="city-list-name">{city.name}</span>
             {#if city.chinese_name}
               <span class="city-list-chinese chinese-text">{city.chinese_name}</span>
@@ -81,6 +85,15 @@
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .city-list-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
   }
 
   .city-list-name {

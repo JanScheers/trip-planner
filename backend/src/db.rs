@@ -38,7 +38,7 @@ async fn seed_cities(pool: &SqlitePool, path: &str) {
         .delimiter(b'\t')
         .from_reader(content.as_bytes());
 
-    // columns: key, name, chinese_name, emoji, description, tagline, lat, lng
+    // columns: key, name, chinese_name, emoji, description, tagline, lat, lng, hero_image
     for result in reader.records() {
         let record = result.expect("Failed to read cities.tsv record");
         let key = record.get(0).unwrap_or("").to_string();
@@ -49,11 +49,12 @@ async fn seed_cities(pool: &SqlitePool, path: &str) {
         let tagline = record.get(5).unwrap_or("").to_string();
         let lat: Option<f64> = record.get(6).and_then(|v| v.parse().ok());
         let lng: Option<f64> = record.get(7).and_then(|v| v.parse().ok());
+        let hero_image: Option<String> = record.get(8).filter(|v| !v.is_empty()).map(str::to_string);
 
         sqlx::query(
             "INSERT OR IGNORE INTO cities \
-             (key, name, chinese_name, emoji, description, tagline, lat, lng) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+             (key, name, chinese_name, emoji, description, tagline, lat, lng, hero_image) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&key)
         .bind(&name)
@@ -63,6 +64,7 @@ async fn seed_cities(pool: &SqlitePool, path: &str) {
         .bind(&tagline)
         .bind(lat)
         .bind(lng)
+        .bind(&hero_image)
         .execute(pool)
         .await
         .expect("Failed to insert city");
@@ -75,22 +77,24 @@ async fn seed_accommodations(pool: &SqlitePool, path: &str) {
         .delimiter(b'\t')
         .from_reader(content.as_bytes());
 
-    // columns: key, name, emoji, notes
+    // columns: key, name, emoji, notes, hero_image
     for result in reader.records() {
         let record = result.expect("Failed to read accommodations.tsv record");
         let key = record.get(0).unwrap_or("").to_string();
         let name = record.get(1).unwrap_or("").to_string();
         let emoji: Option<String> = record.get(2).filter(|v| !v.is_empty()).map(str::to_string);
         let notes = record.get(3).unwrap_or("").to_string();
+        let hero_image: Option<String> = record.get(4).filter(|v| !v.is_empty()).map(str::to_string);
 
         sqlx::query(
-            "INSERT OR IGNORE INTO accommodations (key, name, link, emoji, notes) \
-             VALUES (?, ?, '', ?, ?)",
+            "INSERT OR IGNORE INTO accommodations (key, name, link, emoji, notes, hero_image) \
+             VALUES (?, ?, '', ?, ?, ?)",
         )
         .bind(&key)
         .bind(&name)
         .bind(&emoji)
         .bind(&notes)
+        .bind(&hero_image)
         .execute(pool)
         .await
         .expect("Failed to insert accommodation");
@@ -103,7 +107,7 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         .delimiter(b'\t')
         .from_reader(content.as_bytes());
 
-    // columns: date, city_key, accommodation_key, emoji, notes, tagline, travel (optional)
+    // columns: date, city_key, accommodation_key, emoji, notes, tagline, travel, hero_image (optional)
     for result in reader.records() {
         let record = result.expect("Failed to read days.tsv record");
         let date = record.get(0).unwrap_or("").to_string();
@@ -114,10 +118,11 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         let notes = record.get(4).unwrap_or("").to_string();
         let tagline = record.get(5).unwrap_or("").to_string();
         let travel: Option<String> = record.get(6).filter(|v| !v.is_empty()).map(str::to_string);
+        let hero_image: Option<String> = record.get(7).filter(|v| !v.is_empty()).map(str::to_string);
 
         sqlx::query(
-            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, emoji, notes, tagline, travel) \
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO days (date, city_key, accommodation_key, emoji, notes, tagline, travel, hero_image) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&date)
         .bind(&city_key)
@@ -126,6 +131,7 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
         .bind(&notes)
         .bind(&tagline)
         .bind(&travel)
+        .bind(&hero_image)
         .execute(pool)
         .await
         .expect("Failed to insert day");
@@ -171,9 +177,9 @@ mod tests {
     fn write_cities(dir: &tempfile::TempDir, rows: &[(&str, &str, &str)]) {
         let path = dir.path().join("cities.tsv");
         let mut f = std::fs::File::create(&path).unwrap();
-        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\ttagline\tlat\tlng").unwrap();
+        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\ttagline\tlat\tlng\thero_image").unwrap();
         for (key, name, chinese_name) in rows {
-            writeln!(f, "{}\t{}\t{}\t\tA great city.\tTagline.\t0\t0", key, name, chinese_name)
+            writeln!(f, "{}\t{}\t{}\t\tA great city.\tTagline.\t0\t0\t", key, name, chinese_name)
                 .unwrap();
         }
     }
@@ -181,18 +187,18 @@ mod tests {
     fn write_accommodations(dir: &tempfile::TempDir, rows: &[(&str, &str)]) {
         let path = dir.path().join("accommodations.tsv");
         let mut f = std::fs::File::create(&path).unwrap();
-        writeln!(f, "key\tname\temoji\tnotes").unwrap();
+        writeln!(f, "key\tname\temoji\tnotes\thero_image").unwrap();
         for (key, name) in rows {
-            writeln!(f, "{}\t{}\t\t", key, name).unwrap();
+            writeln!(f, "{}\t{}\t\t\t", key, name).unwrap();
         }
     }
 
     fn write_days(dir: &tempfile::TempDir, rows: &[(&str, &str, &str)]) {
         let path = dir.path().join("days.tsv");
         let mut f = std::fs::File::create(&path).unwrap();
-        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes\ttagline").unwrap();
+        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes\ttagline\ttravel\thero_image").unwrap();
         for (date, city_key, acc_key) in rows {
-            writeln!(f, "{}\t{}\t{}\t\t\t", date, city_key, acc_key).unwrap();
+            writeln!(f, "{}\t{}\t{}\t\t\t\t\t", date, city_key, acc_key).unwrap();
         }
     }
 
@@ -258,10 +264,10 @@ mod tests {
 
         let cities_path = dir.path().join("cities.tsv");
         let mut f = std::fs::File::create(&cities_path).unwrap();
-        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\ttagline\tlat\tlng").unwrap();
-        writeln!(f, "beijing\tBeijing\t北京\t🏯\tA grand imperial city.\tForbidden City.\t39.9\t116.4")
+        writeln!(f, "key\tname\tchinese_name\temoji\tdescription\ttagline\tlat\tlng\thero_image").unwrap();
+        writeln!(f, "beijing\tBeijing\t北京\t🏯\tA grand imperial city.\tForbidden City.\t39.9\t116.4\t")
             .unwrap();
-        writeln!(f, "xian\tXi'an\t西安\t🏺\tAncient Silk Road capital.\tTerracotta.\t34.3\t108.9")
+        writeln!(f, "xian\tXi'an\t西安\t🏺\tAncient Silk Road capital.\tTerracotta.\t34.3\t108.9\t")
             .unwrap();
 
         write_accommodations(&dir, &[]);
@@ -330,8 +336,8 @@ mod tests {
 
         let days_path = dir.path().join("days.tsv");
         let mut f = std::fs::File::create(&days_path).unwrap();
-        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes\ttagline").unwrap();
-        writeln!(f, "2026-10-09\tbeijing\thutong\t✈️\tArrival day, explore hutongs.\tTouch down and wander the hutongs").unwrap();
+        writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes\ttagline\ttravel\thero_image").unwrap();
+        writeln!(f, "2026-10-09\tbeijing\thutong\t✈️\tArrival day, explore hutongs.\tTouch down and wander the hutongs\t\t").unwrap();
 
         seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
 

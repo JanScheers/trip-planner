@@ -196,6 +196,24 @@ tr:hover td {
   box-shadow: 0 4px 20px rgba(44, 42, 38, 0.08);
 }
 
+.hero-placeholder {
+  width: 100%;
+  max-height: 300px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--gold-glow) 0%, color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-placeholder-emoji {
+  font-size: 64px;
+  opacity: 0.6;
+}
+
 .emoji-large {
   font-size: 48px;
   line-height: 1;
