@@ -125,79 +125,85 @@
     </div>
   </div>
 
-  <section class="section">
-    <div class="section-header">
-      <h2>The Route</h2>
-      <p class="section-desc">
-        Beijing to Hong Kong — a journey through 5,000 years of history
-      </p>
-    </div>
-    <div class="map-card card">
-      <ChinaMap {cities} {days} onCityClick={(key) => navigate(`/cities/${key}`)} />
-      <div class="progress-bar">
-        {#each days as day}
-          <a
-            href="#/days/{day.id}"
-            class="progress-segment {getDayProgress(day)}"
-            style="--seg-color: {getCityColor(day.city_key, cities)};"
-            title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
-          >
-            <span class="segment-label"
-              >{new Date(day.date + "T00:00:00").getDate()}</span
+  <div class="container home-sections">
+    <section class="section">
+      <div class="section-header">
+        <h2>The Route</h2>
+        <p class="section-desc">
+          Beijing to Hong Kong — a journey through 5,000 years of history
+        </p>
+      </div>
+      <div class="map-card card">
+        <ChinaMap
+          {cities}
+          {days}
+          onCityClick={(key) => navigate(`/cities/${key}`)}
+        />
+        <div class="progress-bar">
+          {#each days as day}
+            <a
+              href="#/days/{day.id}"
+              class="progress-segment {getDayProgress(day)}"
+              style="--seg-color: {getCityColor(day.city_key, cities)};"
+              title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
             >
+              <span class="segment-label"
+                >{new Date(day.date + "T00:00:00").getDate()}</span
+              >
+            </a>
+          {/each}
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Destinations</h2>
+        <p class="section-desc">Seven cities, each with its own story</p>
+      </div>
+      <div class="city-grid">
+        {#each cities as city}
+          <a
+            href="#/cities/{city.key}"
+            class="city-card"
+            style="--city-color: {getCityColor(city.key, cities)};"
+          >
+            <div class="city-card-accent"></div>
+            <div class="city-card-body">
+              <div class="city-card-top">
+                {#if city.emoji}
+                  <span class="city-emoji">{city.emoji}</span>
+                {:else}
+                  <span
+                    class="city-dot"
+                    style="background: {getCityColor(city.key, cities)};"
+                  ></span>
+                {/if}
+                <div>
+                  <h3 class="city-name">{city.name}</h3>
+                  {#if city.chinese_name}
+                    <span class="city-chinese chinese-text"
+                      >{city.chinese_name}</span
+                    >
+                  {/if}
+                </div>
+              </div>
+              <p class="city-desc">{city.tagline}</p>
+              <div class="city-card-footer">
+                <span class="city-days-count"
+                  >{days.filter((d) => d.city_key === city.key).length} days</span
+                >
+                <span class="city-arrow">&rarr;</span>
+              </div>
+            </div>
           </a>
         {/each}
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="section">
-    <div class="section-header">
-      <h2>Destinations</h2>
-      <p class="section-desc">Seven cities, each with its own story</p>
+    <div class="cta-strip">
+      <a href="#/days" class="btn-gold cta-btn">View Full Itinerary &rarr;</a>
     </div>
-    <div class="city-grid">
-      {#each cities as city}
-        <a
-          href="#/cities/{city.key}"
-          class="city-card"
-          style="--city-color: {getCityColor(city.key, cities)};"
-        >
-          <div class="city-card-accent"></div>
-          <div class="city-card-body">
-            <div class="city-card-top">
-              {#if city.emoji}
-                <span class="city-emoji">{city.emoji}</span>
-              {:else}
-                <span
-                  class="city-dot"
-                  style="background: {getCityColor(city.key, cities)};"
-                ></span>
-              {/if}
-              <div>
-                <h3 class="city-name">{city.name}</h3>
-                {#if city.chinese_name}
-                  <span class="city-chinese chinese-text"
-                    >{city.chinese_name}</span
-                  >
-                {/if}
-              </div>
-            </div>
-            <p class="city-desc">{city.tagline}</p>
-            <div class="city-card-footer">
-              <span class="city-days-count"
-                >{days.filter((d) => d.city_key === city.key).length} days</span
-              >
-              <span class="city-arrow">&rarr;</span>
-            </div>
-          </div>
-        </a>
-      {/each}
-    </div>
-  </section>
-
-  <div class="cta-strip">
-    <a href="#/days" class="btn-gold cta-btn">View Full Itinerary &rarr;</a>
   </div>
 </div>
 
@@ -209,11 +215,17 @@
     padding-bottom: 32px;
   }
 
+  .home-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
   /* --- Hero --- */
   .hero {
     position: relative;
     text-align: center;
-    padding: 72px 0 48px;
+    padding: 0 0 48px;
     overflow: hidden;
     min-height: 420px;
   }
@@ -227,7 +239,7 @@
   .hero-bg-image {
     position: absolute;
     inset: 0;
-    background-image: url('https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=1920&q=80');
+    background-image: url("https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=1920&q=80");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -236,7 +248,12 @@
   .hero-bg-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(44, 42, 38, 0.5) 0%, rgba(44, 42, 38, 0.35) 40%, rgba(245, 243, 239, 0.85) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(44, 42, 38, 0.5) 0%,
+      rgba(44, 42, 38, 0.35) 40%,
+      rgba(245, 243, 239, 0.85) 100%
+    );
   }
 
   .hero-glow {
@@ -249,8 +266,7 @@
     height: max(140%, 900px);
     min-width: 100%;
     min-height: 100%;
-    background:
-      radial-gradient(
+    background: radial-gradient(
         ellipse 80% 50% at 50% 30%,
         rgba(232, 213, 163, 0.4) 0%,
         rgba(184, 134, 11, 0.12) 40%,
@@ -311,6 +327,7 @@
   .hero-content {
     position: relative;
     z-index: 1;
+    padding-top: 72px;
   }
 
   .hero-badge {
@@ -323,7 +340,11 @@
     padding: 4px 16px;
     border-radius: 99px;
     margin-bottom: 24px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(232, 213, 163, 0.25) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(232, 213, 163, 0.25) 100%
+    );
     box-shadow: 0 2px 12px rgba(184, 134, 11, 0.1);
   }
 
@@ -336,7 +357,12 @@
 
   .title-chinese {
     font-size: 56px;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold-dim) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--gold) 0%,
+      var(--gold-light) 50%,
+      var(--gold-dim) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -489,7 +515,11 @@
     padding: 0;
     margin: 0 20px;
     overflow: hidden;
-    background: linear-gradient(180deg, #fff 0%, var(--bg-card-start) 100%) !important;
+    background: linear-gradient(
+      180deg,
+      #fff 0%,
+      var(--bg-card-start) 100%
+    ) !important;
     box-shadow: 0 2px 16px rgba(44, 42, 38, 0.08) !important;
   }
 
@@ -523,7 +553,11 @@
 
   .city-card-accent {
     height: 4px;
-    background: linear-gradient(90deg, var(--city-color) 0%, color-mix(in srgb, var(--city-color) 80%, white) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--city-color) 0%,
+      color-mix(in srgb, var(--city-color) 80%, white) 100%
+    );
     opacity: 0.9;
     transition: opacity 0.25s;
   }

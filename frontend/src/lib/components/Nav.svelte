@@ -1,11 +1,33 @@
 <script lang="ts">
-  import type { AuthUser } from '../types';
-  import { api } from '../api';
+  import type { AuthUser } from "../types";
+  import { api } from "../api";
 
-  let { user, editMode, ontoggleedit }: { user: AuthUser | null; editMode: boolean; ontoggleedit: () => void } = $props();
+  let {
+    user,
+    editMode,
+    ontoggleedit,
+  }: { user: AuthUser | null; editMode: boolean; ontoggleedit: () => void } =
+    $props();
+
+  let scrollY = $state(0);
+  let navOpacity = $derived(Math.min(1, scrollY / 120));
+
+  $effect(() => {
+    const onScroll = () => {
+      scrollY = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    scrollY = window.scrollY;
+    return () => window.removeEventListener("scroll", onScroll);
+  });
 </script>
 
-<nav>
+<nav
+  style="opacity: {navOpacity}; transition: opacity 0.2s ease; pointer-events: {navOpacity <
+  0.01
+    ? 'none'
+    : 'auto'};"
+>
   <div class="nav-inner container">
     <div class="nav-left">
       <a href="#/" class="nav-brand">
@@ -24,13 +46,21 @@
         {/if}
         <span class="user-name">{user.name}</span>
         {#if user.is_editor}
-          <button class="edit-toggle" class:active={editMode} onclick={ontoggleedit}>
-            {editMode ? 'Editing' : 'Edit'}
+          <button
+            class="edit-toggle"
+            class:active={editMode}
+            onclick={ontoggleedit}
+          >
+            {editMode ? "Editing" : "Edit"}
           </button>
         {/if}
         <a href={api.auth.logoutUrl} class="btn-outline btn-sm">Logout</a>
       {:else}
-        <a href={api.auth.loginUrl} class="btn-gold btn-sm" style="text-decoration:none;">Login</a>
+        <a
+          href={api.auth.loginUrl}
+          class="btn-gold btn-sm"
+          style="text-decoration:none;">Login</a
+        >
       {/if}
     </div>
   </div>
@@ -38,10 +68,16 @@
 
 <style>
   nav {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 244, 0.98) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(250, 248, 244, 0.98) 100%
+    );
     border-bottom: 1px solid var(--border);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -95,7 +131,7 @@
   }
 
   .nav-link::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -2px;
     left: 0;
@@ -143,7 +179,10 @@
     font-weight: 600;
     border: 1px solid var(--border);
     cursor: pointer;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition:
+      color 0.15s,
+      border-color 0.15s,
+      background 0.15s;
   }
 
   .edit-toggle:hover {
@@ -158,7 +197,11 @@
   }
 
   @media (max-width: 600px) {
-    .nav-links { display: none; }
-    .user-name { display: none; }
+    .nav-links {
+      display: none;
+    }
+    .user-name {
+      display: none;
+    }
   }
 </style>

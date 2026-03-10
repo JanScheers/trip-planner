@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { api, staticUrl } from '../api';
-  import { getCityColor } from '../cityColors';
-  import { navigate } from '../router';
-  import type { Day, City, Accommodation, AuthUser } from '../types';
+  import { api, staticUrl } from "../api";
+  import { getCityColor } from "../cityColors";
+  import { navigate } from "../router";
+  import type { Day, City, Accommodation, AuthUser } from "../types";
 
-  let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
+  let { user, editMode }: { user: AuthUser | null; editMode: boolean } =
+    $props();
 
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
@@ -22,8 +23,10 @@
     ]);
   }
 
-  let cityMap = $derived(Object.fromEntries(cities.map(c => [c.key, c])));
-  let accMap = $derived(Object.fromEntries(accommodations.map(a => [a.key, a])));
+  let cityMap = $derived(Object.fromEntries(cities.map((c) => [c.key, c])));
+  let accMap = $derived(
+    Object.fromEntries(accommodations.map((a) => [a.key, a])),
+  );
   let canEdit = $derived(editMode);
   function dayThumbUrl(day: Day): string | null {
     return day.hero_image || cityMap[day.city_key]?.hero_image || null;
@@ -43,7 +46,7 @@
   async function addDay() {
     const last = days[days.length - 1];
     if (!last) return;
-    const nextDate = new Date(last.date + 'T00:00:00');
+    const nextDate = new Date(last.date + "T00:00:00");
     nextDate.setDate(nextDate.getDate() + 1);
     const dateStr = nextDate.toISOString().slice(0, 10);
     await api.days.create({
@@ -55,14 +58,18 @@
   }
 
   async function deleteDay(id: number) {
-    if (!confirm('Delete this day?')) return;
+    if (!confirm("Delete this day?")) return;
     await api.days.delete(id);
     await loadData();
   }
 
   function formatDate(dateStr: string): string {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
   }
 </script>
 
@@ -78,7 +85,9 @@
         <th>Travel</th>
         {#if canEdit}
           <th class="col-actions">
-            <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank">Export TSV</a>
+            <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank"
+              >Export TSV</a
+            >
           </th>
         {/if}
       </tr>
@@ -93,19 +102,26 @@
           class:new-city={isNewCity}
           style="--city-color: {getCityColor(day.city_key, cities)};"
           onclick={(e: MouseEvent) => {
-            if ((e.target as HTMLElement).closest('select, button, a')) return;
+            if ((e.target as HTMLElement).closest("select, button, a")) return;
             navigate(`/days/${day.id}`);
           }}
         >
           <td class="col-thumb">
             {#if thumb}
-              <img src={staticUrl(thumb)} alt="" class="day-row-thumb" loading="lazy" />
+              <img
+                src={staticUrl(thumb)}
+                alt=""
+                class="day-row-thumb"
+                loading="lazy"
+              />
             {:else}
-              <span class="day-row-thumb-placeholder">{day.emoji || '📅'}</span>
+              <span class="day-row-thumb-placeholder">{day.emoji || "📅"}</span>
             {/if}
           </td>
           <td class="col-emoji">
-            {#if day.emoji}<span>{day.emoji}</span>{:else}<span class="day-num">{i + 1}</span>{/if}
+            {#if day.emoji}<span>{day.emoji}</span>{:else}<span class="day-num"
+                >{i + 1}</span
+              >{/if}
           </td>
           <td>
             <span class="date-text">{formatDate(day.date)}</span>
@@ -117,7 +133,8 @@
             {#if canEdit}
               <select
                 value={day.city_key}
-                onchange={(e) => updateDayCity(day, (e.target as HTMLSelectElement).value)}
+                onchange={(e) =>
+                  updateDayCity(day, (e.target as HTMLSelectElement).value)}
               >
                 {#each cities as city}
                   <option value={city.key}>{city.name}</option>
@@ -130,8 +147,12 @@
           <td>
             {#if canEdit}
               <select
-                value={day.accommodation_key || ''}
-                onchange={(e) => updateDayAccommodation(day, (e.target as HTMLSelectElement).value)}
+                value={day.accommodation_key || ""}
+                onchange={(e) =>
+                  updateDayAccommodation(
+                    day,
+                    (e.target as HTMLSelectElement).value,
+                  )}
               >
                 <option value="">— None —</option>
                 {#each accommodations as acc}
@@ -139,7 +160,10 @@
                 {/each}
               </select>
             {:else if day.accommodation_key}
-              <span>{accMap[day.accommodation_key]?.name || day.accommodation_key}</span>
+              <span
+                >{accMap[day.accommodation_key]?.name ||
+                  day.accommodation_key}</span
+              >
             {:else}
               <span class="text-muted">—</span>
             {/if}
@@ -153,7 +177,10 @@
           </td>
           {#if canEdit}
             <td class="col-actions">
-              <button class="btn-danger btn-sm" onclick={() => deleteDay(day.id)}>×</button>
+              <button
+                class="btn-danger btn-sm"
+                onclick={() => deleteDay(day.id)}>×</button
+              >
             </td>
           {/if}
         </tr>
@@ -187,7 +214,11 @@
 
   th {
     padding: 14px 16px;
-    background: linear-gradient(180deg, var(--bg-hover) 0%, var(--bg-secondary) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--bg-hover) 0%,
+      var(--bg-secondary) 100%
+    );
     color: var(--gold-dim);
   }
 
@@ -229,7 +260,10 @@
     font-size: 18px;
   }
 
-  .col-emoji { width: 40px; text-align: center; }
+  .col-emoji {
+    width: 40px;
+    text-align: center;
+  }
 
   .col-travel {
     max-width: 220px;
