@@ -4,7 +4,8 @@
   let {
     currentImage,
     onUpload,
-  }: { currentImage: string | null; onUpload: (url: string) => void } =
+    compact = false,
+  }: { currentImage: string | null; onUpload: (url: string) => void; compact?: boolean } =
     $props();
 
   let uploading = $state(false);
@@ -32,7 +33,7 @@
   }
 </script>
 
-<div class="image-upload">
+<div class="image-upload" class:compact>
   <input
     type="file"
     accept="image/*"
@@ -40,7 +41,7 @@
     onchange={handleFile}
     hidden
   />
-  {#if currentImage}
+  {#if currentImage && !compact}
     <button
       type="button"
       class="image-overlay-trigger"
@@ -60,7 +61,7 @@
       onclick={() => fileInput?.click()}
       disabled={uploading}
     >
-      {uploading ? "Uploading..." : "Upload Image"}
+      {uploading ? "Uploading..." : compact && currentImage ? "Change Image" : "Upload Image"}
     </button>
   {/if}
 </div>
@@ -68,6 +69,10 @@
 <style>
   .image-upload {
     margin-bottom: 16px;
+  }
+
+  .image-upload.compact {
+    margin-bottom: 0;
   }
 
   .image-overlay-trigger {

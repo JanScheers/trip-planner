@@ -1,6 +1,7 @@
 <script lang="ts">
   import 'emoji-picker-element';
   import { api, staticUrl } from '../api';
+  import { formatDate } from '../format';
   import { navigate } from '../router';
   import type { Accommodation, Day, AuthUser } from '../types';
   import ImageUpload from './ImageUpload.svelte';
@@ -45,11 +46,6 @@
   async function updateField(updates: Record<string, any>) {
     if (!acc) return;
     acc = await api.accommodations.update(acc.key, updates);
-  }
-
-  function formatDate(dateStr: string): string {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 
   $effect(() => {

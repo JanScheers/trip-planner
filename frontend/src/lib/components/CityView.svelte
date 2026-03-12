@@ -2,6 +2,7 @@
   import 'emoji-picker-element';
   import { api, staticUrl } from '../api';
   import { getCityColor } from '../cityColors';
+  import { formatDate } from '../format';
   import { navigate } from '../router';
   import type { City, Day, AuthUser } from '../types';
   import ImageUpload from './ImageUpload.svelte';
@@ -91,11 +92,6 @@
     });
     await shiftDaysFrom(insertionDate, newDay.id);
     await loadData(key);
-  }
-
-  function formatDate(dateStr: string): string {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 
   $effect(() => {

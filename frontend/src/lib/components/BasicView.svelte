@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api, staticUrl } from "../api";
   import { getCityColor } from "../cityColors";
+  import { formatDate } from "../format";
   import { navigate } from "../router";
   import type { Day, City, Accommodation, AuthUser } from "../types";
 
@@ -63,14 +64,6 @@
     await loadData();
   }
 
-  function formatDate(dateStr: string): string {
-    const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  }
 </script>
 
 <div class="card table-card">
