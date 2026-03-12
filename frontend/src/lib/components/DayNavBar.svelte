@@ -3,7 +3,17 @@
   import { getCityColor } from "../cityColors";
   import type { Day, City } from "../types";
 
-  let { currentDayId = null }: { currentDayId?: number | null } = $props();
+  let {
+    currentDayId = null,
+    presentationMode = false,
+    onEnterPresentation,
+    onExitPresentation,
+  }: {
+    currentDayId?: number | null;
+    presentationMode?: boolean;
+    onEnterPresentation?: () => void;
+    onExitPresentation?: () => void;
+  } = $props();
 
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
@@ -28,7 +38,12 @@
 </script>
 
 {#if days.length > 0}
-  <div class="day-nav-bar" role="navigation" aria-label="Day navigation">
+  <div
+    class="day-nav-bar"
+    class:presentation-mode={presentationMode}
+    role="navigation"
+    aria-label="Day navigation"
+  >
     <div class="progress-bar">
       {#each days as day}
         <a
@@ -44,19 +59,65 @@
         </a>
       {/each}
     </div>
+    {#if presentationMode && onExitPresentation}
+      <button
+        class="fullscreen-btn"
+        onclick={onExitPresentation}
+        title="Exit full screen"
+        aria-label="Exit full screen"
+      >
+        ✕
+      </button>
+    {:else if onEnterPresentation}
+      <button
+        class="fullscreen-btn"
+        onclick={onEnterPresentation}
+        title="Full screen"
+        aria-label="Full screen"
+      >
+        ⛶
+      </button>
+    {/if}
   </div>
 {/if}
 
 <style>
   .day-nav-bar {
+    display: flex;
+    align-items: stretch;
     border-bottom: 1px solid var(--border);
     box-shadow: 0 2px 8px rgba(44, 42, 38, 0.06);
   }
 
+  .day-nav-bar.presentation-mode {
+    flex-shrink: 0;
+  }
+
   .progress-bar {
+    flex: 1;
     display: flex;
     gap: 0;
     margin: 0;
+  }
+
+  .fullscreen-btn {
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, color 0.15s;
+  }
+
+  .fullscreen-btn:hover {
+    opacity: 1;
+    color: var(--gold);
   }
 
   .progress-segment {

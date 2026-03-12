@@ -11,16 +11,12 @@
     editMode,
     slideshowEl = $bindable(undefined),
     presentationMode = false,
-    onEnterPresentation,
-    onExitPresentation,
   }: {
     id: number;
     user: AuthUser | null;
     editMode: boolean;
     slideshowEl?: HTMLDivElement | undefined;
     presentationMode?: boolean;
-    onEnterPresentation?: () => void;
-    onExitPresentation?: () => void;
   } = $props();
 
   let day: Day | null = $state(null);
@@ -30,12 +26,6 @@
 
   let canEdit = $derived(editMode);
   let dayIds = $derived(allDays.map((d) => d.id));
-  let slideIndex = $derived.by(() => {
-    if (!day) return 0;
-    const i = dayIds.indexOf(day.id);
-    return i >= 0 ? i + 1 : 0;
-  });
-  let totalSlides = $derived(dayIds.length);
   let prevId = $derived.by(() => {
     if (!day) return undefined;
     const i = dayIds.indexOf(day.id);
@@ -120,29 +110,6 @@
     role="region"
     aria-label="Day slide"
   >
-    {#if totalSlides > 0}
-      <div class="slide-controls">
-        <span class="slide-indicator">
-          Day {slideIndex} of {totalSlides}
-        </span>
-        <button
-          class="presentation-btn"
-          onclick={() =>
-            presentationMode ? onExitPresentation?.() : onEnterPresentation?.()}
-          title={presentationMode
-            ? "Exit presentation (Esc)"
-            : "Enter presentation mode"}
-          aria-label={presentationMode ? "Exit presentation" : "Enter presentation mode"}
-        >
-          {#if presentationMode}
-            ✕ Exit
-          {:else}
-            ⛶ Full screen
-          {/if}
-        </button>
-      </div>
-    {/if}
-
     <div class="nav-arrows">
       <button
         class="nav-arrow nav-arrow-left"
@@ -315,35 +282,6 @@
   .day-slideshow.presentation-mode {
     min-height: 100vh;
     background: transparent;
-  }
-
-  .slide-controls {
-    position: relative;
-    z-index: 2;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .slide-indicator {
-    font-size: 13px;
-    color: var(--text-secondary);
-  }
-
-  .presentation-btn {
-    font-size: 12px;
-    color: var(--text-muted);
-    background: transparent;
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: var(--radius);
-  }
-
-  .presentation-btn:hover {
-    color: var(--gold);
-    border-color: var(--border-gold);
   }
 
   .nav-arrows {

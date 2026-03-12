@@ -82,11 +82,6 @@
       rgba(250, 248, 244, 0.98) 100%
     );
     border-bottom: 1px solid var(--border);
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 2px 20px rgba(44, 42, 38, 0.06);
