@@ -299,13 +299,13 @@
 
   .nav-arrow {
     pointer-events: auto;
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 1px solid var(--border);
     background: color-mix(in srgb, var(--bg-card) 90%, transparent);
     color: var(--text-primary);
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -322,7 +322,7 @@
     background: color-mix(in srgb, var(--bg-card) 98%, transparent);
     border-color: var(--border-gold);
     color: var(--gold);
-    transform: scale(1.12);
+    transform: scale(1.08);
   }
 
   .nav-arrow:active:not(:disabled) {
@@ -339,7 +339,7 @@
     z-index: 1;
     max-width: 720px;
     margin: 0 auto;
-    padding: 0 48px 48px;
+    padding: 24px 48px 48px;
   }
 
   .notion-hero {
@@ -390,7 +390,7 @@
 
   .notion-subtext {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     margin: 0 0 8px;
   }
 
@@ -434,7 +434,7 @@
 
   .travel-text {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
 
   .travel-input {

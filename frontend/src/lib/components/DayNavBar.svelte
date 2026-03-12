@@ -135,11 +135,11 @@
 
   .progress-segment.past,
   .progress-segment.current {
-    background: var(--seg-color);
+    background: color-mix(in srgb, var(--seg-color) 35%, var(--bg-secondary));
   }
 
   .progress-segment.future {
-    background: color-mix(in srgb, var(--seg-color) 22%, var(--bg-secondary));
+    background: color-mix(in srgb, var(--seg-color) 30%, var(--bg-secondary));
   }
 
   .progress-segment:hover {
@@ -153,12 +153,12 @@
   }
 
   .progress-segment.viewing {
-    box-shadow: inset 0 0 0 2px var(--text-primary);
+    box-shadow: inset 0 0 0 2px var(--gold);
     z-index: 1;
   }
 
   .segment-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -171,7 +171,7 @@
 
   @media (max-width: 640px) {
     .segment-label {
-      font-size: 9px;
+      font-size: 11px;
     }
 
     .progress-segment {

@@ -15,6 +15,15 @@
   let canEdit = $derived(editMode);
   let cityDays = $derived(days.filter(d => d.city_key === key));
   let cityMap = $derived(Object.fromEntries(cities.map((c) => [c.key, c])));
+  let cityKeys = $derived(cities.map((c) => c.key));
+  let prevKey = $derived.by(() => {
+    const i = cityKeys.indexOf(key);
+    return i > 0 ? cityKeys[i - 1] : undefined;
+  });
+  let nextKey = $derived.by(() => {
+    const i = cityKeys.indexOf(key);
+    return i >= 0 && i < cityKeys.length - 1 ? cityKeys[i + 1] : undefined;
+  });
 
   function dayThumbUrl(day: Day): string | null {
     return day.hero_image || cityMap[day.city_key]?.hero_image || null;
@@ -84,20 +93,55 @@
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
+
+  $effect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.key === 'ArrowLeft' && prevKey != null) {
+        e.preventDefault();
+        navigate(`/cities/${prevKey}`);
+      } else if (e.key === 'ArrowRight' && nextKey != null) {
+        e.preventDefault();
+        navigate(`/cities/${nextKey}`);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
 </script>
 
 {#if city}
-  <div class="page-header">
-    {#if city.emoji}<span class="emoji-large">{city.emoji}</span>{/if}
-    <div>
-      <h1>{city.name}</h1>
-      {#if city.chinese_name}
-        <span class="chinese-name chinese-text">{city.chinese_name}</span>
-      {/if}
-      {#if city.tagline}
-        <p class="city-tagline">{city.tagline}</p>
-      {/if}
+  <div class="page-header-wrap">
+    <button
+      type="button"
+      class="nav-arrow nav-arrow-left"
+      disabled={prevKey == null}
+      onclick={() => prevKey != null && navigate(`/cities/${prevKey}`)}
+      aria-label="Previous city"
+    >
+      ←
+    </button>
+    <div class="page-header">
+      {#if city.emoji}<span class="emoji-large">{city.emoji}</span>{/if}
+      <div>
+        <h1>{city.name}</h1>
+        {#if city.chinese_name}
+          <span class="chinese-name chinese-text">{city.chinese_name}</span>
+        {/if}
+        {#if city.tagline}
+          <p class="city-tagline">{city.tagline}</p>
+        {/if}
+      </div>
     </div>
+    <button
+      type="button"
+      class="nav-arrow nav-arrow-right"
+      disabled={nextKey == null}
+      onclick={() => nextKey != null && navigate(`/cities/${nextKey}`)}
+      aria-label="Next city"
+    >
+      →
+    </button>
   </div>
 
   {#if canEdit}
@@ -171,7 +215,7 @@
 
     <div class="card table-card">
       <div class="table-card-header">
-        <h3 class="section-title">Days in {city.name} ({cityDays.length})</h3>
+        <h3 class="section-title">{cityDays.length} {cityDays.length === 1 ? 'day' : 'days'} in {city.name}</h3>
       </div>
       <table>
         <tbody>
@@ -224,6 +268,55 @@
 {/if}
 
 <style>
+  .page-header-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .page-header-wrap .page-header {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .nav-arrow {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+    color: var(--text-primary);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease,
+      opacity 0.25s ease,
+      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .nav-arrow:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--bg-card) 98%, transparent);
+    border-color: var(--border-gold);
+    color: var(--gold);
+    transform: scale(1.08);
+  }
+
+  .nav-arrow:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  .nav-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
   .chinese-name {
     font-size: 18px;
     color: var(--text-secondary);

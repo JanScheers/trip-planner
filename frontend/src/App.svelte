@@ -121,12 +121,14 @@
         />
       </div>
     {:else}
-      <DayView
-        id={Number(route.params.id)}
-        {user}
-        {editMode}
-        {presentationMode}
-      />
+      <div class="day-page-viewport">
+        <DayView
+          id={Number(route.params.id)}
+          {user}
+          {editMode}
+          {presentationMode}
+        />
+      </div>
     {/if}
   {:else if route.page === "city"}
     <CityView key={route.params.key} {user} {editMode} />
@@ -158,10 +160,32 @@
     .main-content.with-day-bar {
       padding-top: 108px;
     }
+
+    .main-content.day-page {
+      height: calc(100vh - 108px);
+    }
   }
 
   .main-content.day-page {
     background: var(--bg-primary, #f5f3ef);
+    height: calc(100vh - 116px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .day-page-viewport {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .day-page-viewport :global(.day-slideshow:not(.presentation-mode)) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .main-content.presentation-fullscreen {
