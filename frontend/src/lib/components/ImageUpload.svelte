@@ -8,6 +8,7 @@
     $props();
 
   let uploading = $state(false);
+  let fileInput: HTMLInputElement;
 
   async function handleFile(e: Event) {
     const input = e.target as HTMLInputElement;
@@ -22,27 +23,97 @@
       alert("Upload failed");
     } finally {
       uploading = false;
+      input.value = "";
     }
+  }
+
+  function triggerUpload() {
+    if (!uploading) fileInput?.click();
   }
 </script>
 
 <div class="image-upload">
+  <input
+    type="file"
+    accept="image/*"
+    bind:this={fileInput}
+    onchange={handleFile}
+    hidden
+  />
   {#if currentImage}
-    <img src={staticUrl(currentImage)} alt="Hero" class="hero-image" />
+    <button
+      type="button"
+      class="image-overlay-trigger"
+      onclick={triggerUpload}
+      disabled={uploading}
+      aria-label="Change image"
+    >
+      <img src={staticUrl(currentImage)} alt="Hero" class="hero-image" />
+      <span class="image-overlay">
+        {uploading ? "Uploading..." : "Change Image"}
+      </span>
+    </button>
+  {:else}
+    <button
+      type="button"
+      class="upload-btn btn-outline btn-sm"
+      onclick={() => fileInput?.click()}
+      disabled={uploading}
+    >
+      {uploading ? "Uploading..." : "Upload Image"}
+    </button>
   {/if}
-  <label class="upload-btn btn-outline btn-sm">
-    {uploading
-      ? "Uploading..."
-      : currentImage
-        ? "Change Image"
-        : "Upload Image"}
-    <input type="file" accept="image/*" onchange={handleFile} hidden />
-  </label>
 </div>
 
 <style>
   .image-upload {
     margin-bottom: 16px;
+  }
+
+  .image-overlay-trigger {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .image-overlay-trigger:disabled {
+    cursor: wait;
+  }
+
+  .image-overlay-trigger .hero-image {
+    display: block;
+    margin-bottom: 0;
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .image-overlay-trigger:hover .image-overlay,
+  .image-overlay-trigger:focus-visible .image-overlay,
+  .image-overlay-trigger:disabled .image-overlay {
+    opacity: 1;
+  }
+
+  .image-overlay-trigger:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
 
   .upload-btn {

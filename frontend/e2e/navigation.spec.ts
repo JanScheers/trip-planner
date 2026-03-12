@@ -44,9 +44,7 @@ test.describe('Navigation', () => {
 
   test('deep-linking to #/days/1 renders the day view', async ({ page }) => {
     await page.goto('/#/days/1');
-    // Day view shows the formatted date in h1 and a back link
-    await expect(page.locator('a.back-link')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10_000 });
   });
 
   test('Login button is visible when not authenticated', async ({ page }) => {

@@ -148,10 +148,14 @@
           </div>
         {:else if !displayHeroImage}
           <span class="hero-placeholder-emoji">{day.emoji || "📅"}</span>
+        {:else}
+          <div class="hero-fade-overlay" aria-hidden="true"></div>
         {/if}
       </div>
 
-      <!-- 2. Title & subtext -->
+      <!-- 2. Content card (title + body) -->
+      <div class="day-content-card">
+      <!-- Title & subtext -->
       <div class="notion-header">
         <h1 class="notion-title">
           {#if day.emoji}<span class="emoji">{day.emoji}</span>{/if}
@@ -265,6 +269,7 @@
           />
         </div>
       </div>
+      </div>
     </div>
   </div>
 {:else}
@@ -274,7 +279,6 @@
 <style>
   .day-slideshow {
     position: relative;
-    overflow: hidden;
     background: transparent;
     min-height: calc(100vh - 56px);
   }
@@ -282,6 +286,12 @@
   .day-slideshow.presentation-mode {
     min-height: 100vh;
     background: transparent;
+    overflow: hidden;
+  }
+
+  /* When used as scroll container (day page, not presentation), parent sets flex + overflow-y: auto */
+  .day-slideshow:not(.presentation-mode) {
+    overflow: visible;
   }
 
   .nav-arrows {
@@ -339,18 +349,40 @@
     z-index: 1;
     max-width: 720px;
     margin: 0 auto;
-    padding: 24px 48px 48px;
+    padding: 0 48px 48px;
+  }
+
+  .day-content-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
+    border: 1px solid var(--border);
   }
 
   .notion-hero {
+    position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
-    max-height: 280px;
+    aspect-ratio: 16 / 8;
+    max-height: min(56vh, 520px);
     background-size: cover;
     background-position: center;
     margin-bottom: 24px;
     border-radius: var(--radius);
     overflow: hidden;
+  }
+
+  .hero-fade-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 75%,
+      rgba(245, 243, 239, 0.4) 90%,
+      var(--bg-primary) 100%
+    );
   }
 
   .notion-hero.has-placeholder {

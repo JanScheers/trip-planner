@@ -232,18 +232,6 @@ tr:hover td {
   color: var(--text-primary);
 }
 
-.back-link {
-  display: inline-block;
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-  transition: color var(--transition);
-}
-
-.back-link:hover {
-  color: var(--gold);
-}
-
 .field-group {
   margin-bottom: 16px;
 }

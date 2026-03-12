@@ -17,6 +17,27 @@
   let editMode: boolean = $state(false);
   let presentationMode: boolean = $state(false);
   let mainEl: HTMLElement | undefined;
+  let headerEl = $state<HTMLElement | undefined>(undefined);
+
+  $effect(() => {
+    const header = headerEl;
+    if (!header) return;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${header.getBoundingClientRect().height}px`,
+      );
+    });
+    observer.observe(header);
+    document.documentElement.style.setProperty(
+      "--header-height",
+      `${header.getBoundingClientRect().height}px`,
+    );
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--header-height");
+    };
+  });
 
   $effect(() => {
     const handler = () => {
@@ -60,7 +81,7 @@
 </script>
 
 {#if !presentationMode}
-  <header class="app-header">
+  <header class="app-header" bind:this={headerEl}>
     <Nav
       {user}
       {editMode}
@@ -91,7 +112,7 @@
   class:with-nav={!presentationMode && route.page !== "home"}
   class:with-day-bar={!presentationMode && route.page === "day"}
   class:presentation-fullscreen={presentationMode && route.page === "day"}
-  style="{(presentationMode || route.page === 'home' ? 'padding-top: 0px;' : '')} padding-bottom: {presentationMode ? 0 : 48}px;"
+  style="{(presentationMode || route.page === 'home' ? 'padding-top: 0px;' : '')} padding-bottom: {(presentationMode || route.page === 'day') ? 0 : 48}px;"
 >
   {#if route.page === "home"}
     <Home />
@@ -148,27 +169,14 @@
     flex-direction: column;
   }
 
-  .main-content.with-nav {
-    padding-top: 72px;
-  }
-
+  .main-content.with-nav,
   .main-content.with-day-bar {
-    padding-top: 116px;
-  }
-
-  @media (max-width: 640px) {
-    .main-content.with-day-bar {
-      padding-top: 108px;
-    }
-
-    .main-content.day-page {
-      height: calc(100vh - 108px);
-    }
+    padding-top: var(--header-height, 100px);
   }
 
   .main-content.day-page {
     background: var(--bg-primary, #f5f3ef);
-    height: calc(100vh - 116px);
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
