@@ -86,21 +86,21 @@
       {user}
       {editMode}
       isHomePage={route.page === "home"}
+      isDayPage={route.page === "day"}
+      onEnterPresentation={
+        route.page === "day"
+          ? () => {
+              presentationMode = true;
+              mainEl?.requestFullscreen().catch(() => {
+                presentationMode = false;
+              });
+            }
+          : undefined
+      }
       ontoggleedit={() => {
         editMode = !editMode;
       }}
     />
-    {#if route.page === "day"}
-      <DayNavBar
-        currentDayId={Number(route.params.id)}
-        onEnterPresentation={() => {
-          presentationMode = true;
-          mainEl?.requestFullscreen().catch(() => {
-            presentationMode = false;
-          });
-        }}
-      />
-    {/if}
   </header>
 {/if}
 
@@ -111,6 +111,7 @@
   class:day-page={route.page === "day" && !presentationMode}
   class:with-nav={!presentationMode && route.page !== "home"}
   class:with-day-bar={!presentationMode && route.page === "day"}
+  class:list-page={route.page === "basic" || route.page === "cities" || route.page === "accommodations"}
   class:presentation-fullscreen={presentationMode && route.page === "day"}
   style="{(presentationMode || route.page === 'home' ? 'padding-top: 0px;' : '')} padding-bottom: {(presentationMode || route.page === 'day') ? 0 : 48}px;"
 >
@@ -119,26 +120,23 @@
   {:else if route.page === "basic"}
     <BasicView {user} {editMode} />
   {:else if route.page === "cities"}
-    <CitiesView />
+    <CitiesView {user} {editMode} />
   {:else if route.page === "accommodations"}
-    <AccommodationsView />
+    <AccommodationsView {user} {editMode} />
   {:else if route.page === "day"}
     {#if presentationMode}
-      <DayNavBar
-        currentDayId={Number(route.params.id)}
-        presentationMode={true}
-        onExitPresentation={() => {
-          document.exitFullscreen().catch(() => {
-            presentationMode = false;
-          });
-        }}
-      />
-      <div class="presentation-content">
-        <DayView
-          id={Number(route.params.id)}
-          {user}
-          {editMode}
-          {presentationMode}
+      <div class="presentation-viewport">
+        <div class="presentation-content">
+          <DayView
+            id={Number(route.params.id)}
+            {user}
+            {editMode}
+            {presentationMode}
+          />
+        </div>
+        <DayNavBar
+          currentDayId={Number(route.params.id)}
+          presentationMode={true}
         />
       </div>
     {:else}
@@ -149,6 +147,7 @@
           {editMode}
           {presentationMode}
         />
+        <DayNavBar currentDayId={Number(route.params.id)} />
       </div>
     {/if}
   {:else if route.page === "city"}
@@ -172,6 +171,10 @@
   .main-content.with-nav,
   .main-content.with-day-bar {
     padding-top: var(--header-height, 100px);
+  }
+
+  .main-content.list-page {
+    padding-top: calc(var(--header-height, 100px) + 24px);
   }
 
   .main-content.day-page {
@@ -204,6 +207,14 @@
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-primary, #f5f3ef);
+  }
+
+  .presentation-viewport {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .main-content.presentation-fullscreen .presentation-content {

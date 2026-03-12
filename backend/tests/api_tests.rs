@@ -245,6 +245,115 @@ async fn test_update_city() {
     assert_eq!(city["name"], "Beijing");
 }
 
+#[tokio::test]
+async fn test_create_city() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .post("/api/cities")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "name": "Shanghai",
+            "chinese_name": "上海",
+            "tagline": "The Bund and skyline",
+            "lat": 31.2304,
+            "lng": 121.4737
+        }))
+        .await;
+    resp.assert_status(axum::http::StatusCode::CREATED);
+
+    let city: serde_json::Value = resp.json();
+    assert_eq!(city["key"], "shanghai");
+    assert_eq!(city["name"], "Shanghai");
+    assert_eq!(city["chinese_name"], "上海");
+    assert_eq!(city["tagline"], "The Bund and skyline");
+    assert_eq!(city["lat"], 31.2304);
+    assert_eq!(city["lng"], 121.4737);
+}
+
+#[tokio::test]
+async fn test_create_city_same_name_gets_unique_key() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp1 = server
+        .post("/api/cities")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"name": "Beijing"}))
+        .await;
+    resp1.assert_status(axum::http::StatusCode::CREATED);
+    let city1: serde_json::Value = resp1.json();
+    assert_eq!(city1["key"], "beijing-2");
+
+    let resp2 = server
+        .post("/api/cities")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"name": "Shanghai"}))
+        .await;
+    resp2.assert_status(axum::http::StatusCode::CREATED);
+    let city2: serde_json::Value = resp2.json();
+    assert_eq!(city2["key"], "shanghai");
+
+    let resp3 = server
+        .post("/api/cities")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"name": "Shanghai"}))
+        .await;
+    resp3.assert_status(axum::http::StatusCode::CREATED);
+    let city3: serde_json::Value = resp3.json();
+    assert_eq!(city3["key"], "shanghai-2");
+}
+
+#[tokio::test]
+async fn test_delete_city() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .post("/api/cities")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"name": "Shanghai"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::CREATED);
+    let city: serde_json::Value = resp.json();
+    let key = city["key"].as_str().unwrap();
+
+    server
+        .delete(&format!("/api/cities/{}", key))
+        .add_cookie(editor_cookie())
+        .await
+        .assert_status_ok();
+
+    let resp = server.get(&format!("/api/cities/{}", key)).await;
+    resp.assert_status(axum::http::StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_delete_city_with_days() {
+    let server = setup_server(setup_pool().await).await;
+
+    server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "date": "2026-10-01",
+            "city_key": "beijing",
+            "accommodation_key": null
+        }))
+        .await
+        .assert_status(axum::http::StatusCode::CREATED);
+
+    let resp = server
+        .delete("/api/cities/beijing")
+        .add_cookie(editor_cookie())
+        .await;
+    resp.assert_status(axum::http::StatusCode::BAD_REQUEST);
+
+    let body: serde_json::Value = resp.json();
+    let err = body["error"].as_str().unwrap();
+    assert!(err.contains("Cannot delete"));
+    assert!(err.contains("days"));
+    assert!(err.contains("Beijing"));
+}
+
 // --- Accommodations ---
 
 #[tokio::test]
@@ -266,15 +375,12 @@ async fn test_create_accommodation() {
     let resp = server
         .post("/api/accommodations")
         .add_cookie(editor_cookie())
-        .json(&serde_json::json!({
-            "key": "hotel-b",
-            "name": "Hotel Beta"
-        }))
+        .json(&serde_json::json!({"name": "Hotel Beta"}))
         .await;
     resp.assert_status(axum::http::StatusCode::CREATED);
 
     let acc: serde_json::Value = resp.json();
-    assert_eq!(acc["key"], "hotel-b");
+    assert_eq!(acc["key"], "hotel-beta");
     assert_eq!(acc["name"], "Hotel Beta");
 }
 
@@ -320,6 +426,38 @@ async fn test_delete_accommodation_not_found() {
         .add_cookie(editor_cookie())
         .await;
     resp.assert_status(axum::http::StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_delete_accommodation_with_days() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "date": "2026-10-01",
+            "city_key": "beijing",
+            "accommodation_key": "hotel-a"
+        }))
+        .await;
+    resp.assert_status(axum::http::StatusCode::CREATED);
+    let day: serde_json::Value = resp.json();
+    let day_id = day["id"].as_i64().unwrap();
+
+    server
+        .delete("/api/accommodations/hotel-a")
+        .add_cookie(editor_cookie())
+        .await
+        .assert_status_ok();
+
+    let resp = server.get("/api/accommodations/hotel-a").await;
+    resp.assert_status(axum::http::StatusCode::NOT_FOUND);
+
+    let resp = server.get(&format!("/api/days/{day_id}")).await;
+    resp.assert_status_ok();
+    let day_after: serde_json::Value = resp.json();
+    assert!(day_after["accommodation_key"].is_null());
 }
 
 // --- Export ---
@@ -492,16 +630,54 @@ async fn test_create_day_missing_required_fields_returns_error() {
 }
 
 #[tokio::test]
-async fn test_create_accommodation_duplicate_key_returns_error() {
+async fn test_create_day_duplicate_date_returns_400() {
     let server = setup_server(setup_pool().await).await;
-    // hotel-a already exists in setup_pool()
-    let resp = server
+    // Create first day
+    let create_resp = server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "date": "2026-10-01",
+            "city_key": "beijing",
+            "accommodation_key": null
+        }))
+        .await;
+    create_resp.assert_status(axum::http::StatusCode::CREATED);
+
+    // Duplicate date violates UNIQUE constraint -> bad_request (400)
+    let dup_resp = server
+        .post("/api/days")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({
+            "date": "2026-10-01",
+            "city_key": "beijing",
+            "accommodation_key": null
+        }))
+        .await;
+    dup_resp.assert_status(axum::http::StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_create_accommodation_same_name_gets_unique_key() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp1 = server
         .post("/api/accommodations")
         .add_cookie(editor_cookie())
-        .json(&serde_json::json!({"key": "hotel-a", "name": "Duplicate"}))
+        .json(&serde_json::json!({"name": "Hotel Alpha"}))
         .await;
-    // Duplicate key violates UNIQUE constraint -> bad_request (400)
-    resp.assert_status(axum::http::StatusCode::BAD_REQUEST);
+    resp1.assert_status(axum::http::StatusCode::CREATED);
+    let acc1: serde_json::Value = resp1.json();
+    assert_eq!(acc1["key"], "hotel-alpha");
+
+    let resp2 = server
+        .post("/api/accommodations")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"name": "Hotel Alpha"}))
+        .await;
+    resp2.assert_status(axum::http::StatusCode::CREATED);
+    let acc2: serde_json::Value = resp2.json();
+    assert_eq!(acc2["key"], "hotel-alpha-2");
 }
 
 #[tokio::test]

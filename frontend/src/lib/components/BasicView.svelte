@@ -44,47 +44,29 @@
     await loadData();
   }
 
-  async function addDay() {
-    const last = days[days.length - 1];
-    if (!last) return;
-    const nextDate = new Date(last.date + "T00:00:00");
-    nextDate.setDate(nextDate.getDate() + 1);
-    const dateStr = nextDate.toISOString().slice(0, 10);
-    await api.days.create({
-      date: dateStr,
-      city_key: last.city_key,
-      accommodation_key: last.accommodation_key,
-    });
-    await loadData();
-  }
-
-  async function deleteDay(id: number) {
-    if (!confirm("Delete this day?")) return;
-    await api.days.delete(id);
-    await loadData();
-  }
-
 </script>
 
-<div class="card table-card">
-  <table>
-    <thead>
-      <tr>
-        <th class="col-thumb"></th>
-        <th class="col-emoji"></th>
-        <th>Date</th>
-        <th>City</th>
-        <th>Accommodation</th>
-        <th>Travel</th>
-        {#if canEdit}
-          <th class="col-actions">
-            <a href={api.exportUrl} class="btn-outline btn-sm" target="_blank"
-              >Export TSV</a
-            >
-          </th>
-        {/if}
-      </tr>
-    </thead>
+<div class="itinerary-section" class:edit-mode={canEdit}>
+  <div class="section-header">
+    <h2 class="section-title">Itinerary</h2>
+    {#if canEdit}
+      <a href={api.exportUrl} class="btn-gold btn-sm" target="_blank"
+        >Export TSV</a
+      >
+    {/if}
+  </div>
+  <div class="card table-card">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-thumb"></th>
+          <th class="col-emoji"></th>
+          <th class="col-date">Date</th>
+          <th class="col-city">City</th>
+          <th class="col-acc">Stays</th>
+          <th class="col-travel">Travel</th>
+        </tr>
+      </thead>
     <tbody>
       {#each days as day, i}
         {@const prevCity = i > 0 ? days[i - 1].city_key : null}
@@ -116,13 +98,13 @@
                 >{i + 1}</span
               >{/if}
           </td>
-          <td>
+          <td class="col-date">
             <span class="date-text">{formatDate(day.date)}</span>
             {#if day.tagline}
               <div class="day-tagline">{day.tagline}</div>
             {/if}
           </td>
-          <td>
+          <td class="col-city">
             {#if canEdit}
               <select
                 value={day.city_key}
@@ -134,10 +116,10 @@
                 {/each}
               </select>
             {:else}
-              {cityMap[day.city_key]?.name || day.city_key}
+              <span class="cell-text">{cityMap[day.city_key]?.name || day.city_key}</span>
             {/if}
           </td>
-          <td>
+          <td class="col-acc">
             {#if canEdit}
               <select
                 value={day.accommodation_key || ""}
@@ -153,12 +135,11 @@
                 {/each}
               </select>
             {:else if day.accommodation_key}
-              <span
-                >{accMap[day.accommodation_key]?.name ||
-                  day.accommodation_key}</span
+              <a href="#/accommodations/{day.accommodation_key}" class="cell-link"
+                >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
               >
             {:else}
-              <span class="text-muted">—</span>
+              <span class="cell-text text-muted">—</span>
             {/if}
           </td>
           <td class="col-travel">
@@ -168,27 +149,40 @@
               <span class="text-muted">—</span>
             {/if}
           </td>
-          {#if canEdit}
-            <td class="col-actions">
-              <button
-                class="btn-danger btn-sm"
-                onclick={() => deleteDay(day.id)}>×</button
-              >
-            </td>
-          {/if}
         </tr>
       {/each}
     </tbody>
   </table>
+  </div>
 </div>
 
-{#if canEdit}
-  <div style="margin-top: 16px; display: flex; gap: 8px;">
-    <button class="btn-gold" onclick={addDay}>+ Add Day</button>
-  </div>
-{/if}
-
 <style>
+  .itinerary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .section-header a.btn-gold {
+    display: inline-block;
+    text-decoration: none;
+    border-radius: 99px;
+  }
+
   .table-card {
     overflow-x: auto;
     padding: 0;
@@ -196,13 +190,9 @@
     box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   }
 
-  .col-actions {
-    text-align: right;
-    white-space: nowrap;
-  }
-
   table {
     margin: 0;
+    table-layout: fixed;
   }
 
   th {
@@ -258,10 +248,36 @@
     text-align: center;
   }
 
+  .col-date {
+    width: 110px;
+  }
+
+  .col-city {
+    width: 140px;
+  }
+
+  .col-acc {
+    width: 200px;
+  }
+
   .col-travel {
-    max-width: 220px;
+    width: 220px;
     font-size: 12px;
     color: var(--text-muted);
+  }
+
+  .cell-text {
+    display: block;
+  }
+
+  .cell-link {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .cell-link:hover {
+    text-decoration: underline;
+    color: var(--gold-light);
   }
 
   .travel-text {
@@ -306,10 +322,22 @@
   }
 
   select {
-    width: auto;
-    min-width: 120px;
-    padding: 4px 8px;
-    font-size: 13px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 2px 6px;
+    font-size: inherit;
+    line-height: 1.6;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  .edit-mode select:hover,
+  .edit-mode select:focus {
+    background: var(--bg-hover);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   .text-muted {

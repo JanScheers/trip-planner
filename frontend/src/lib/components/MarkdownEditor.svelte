@@ -4,51 +4,34 @@
 
   let { value, readonly, onSave }: { value: string; readonly: boolean; onSave: (val: string) => void } = $props();
 
-  let editing = $state(false);
   let draft = $state('');
 
   let rendered = $derived(DOMPurify.sanitize(marked.parse(value || '_No notes yet._') as string));
 
-  function startEdit() {
-    draft = value;
-    editing = true;
-  }
+  $effect(() => {
+    if (!readonly) draft = value;
+  });
 
   function save() {
     onSave(draft);
-    editing = false;
   }
 
   function cancel() {
-    editing = false;
+    draft = value;
   }
 </script>
 
 <div class="md-editor">
-  {#if editing}
+  {#if readonly}
+    <div class="markdown-content">
+      {@html rendered}
+    </div>
+  {:else}
     <textarea bind:value={draft} rows="10"></textarea>
     <div class="md-actions">
       <button class="btn-gold btn-sm" onclick={save}>Save</button>
       <button class="btn-outline btn-sm" onclick={cancel}>Cancel</button>
     </div>
-  {:else}
-    {#if !readonly}
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-      <div
-        class="markdown-content editable"
-        onclick={startEdit}
-        onkeydown={(e) => { if (e.key === 'Enter') startEdit(); }}
-        role="button"
-        tabindex={0}
-      >
-        {@html rendered}
-      </div>
-      <button class="btn-outline btn-sm" style="margin-top: 8px;" onclick={startEdit}>Edit Notes</button>
-    {:else}
-      <div class="markdown-content">
-        {@html rendered}
-      </div>
-    {/if}
   {/if}
 </div>
 

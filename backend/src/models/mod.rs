@@ -53,6 +53,16 @@ pub struct City {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+pub struct CreateCity {
+    pub name: String,
+    pub chinese_name: Option<String>,
+    pub tagline: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct UpdateCity {
     pub name: Option<String>,
     pub chinese_name: Option<String>,
@@ -78,7 +88,6 @@ pub struct Accommodation {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct CreateAccommodation {
-    pub key: String,
     pub name: String,
 }
 

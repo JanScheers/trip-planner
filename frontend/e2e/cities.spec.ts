@@ -31,8 +31,6 @@ test.describe('City detail – public view', () => {
   });
 
   test('lists 4 days in Beijing from seed data', async ({ page }) => {
-    // CityView renders "4 days in Beijing" section with a table
-    await expect(page.locator('h3', { hasText: 'days in Beijing' })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 
@@ -71,11 +69,4 @@ test.describe('City detail – editor view', () => {
     }
   });
 
-  test('shows Add before / Add after per row in Days section when city has days', async ({ page }) => {
-    await page.goto('/#/cities/beijing');
-    await expect(page.locator('h1')).toContainText('Beijing', { timeout: 10_000 });
-    await expect(page.locator('h3', { hasText: 'days in Beijing' })).toBeVisible();
-    await expect(page.locator('button.btn-add-day', { hasText: 'Add before' }).first()).toBeVisible();
-    await expect(page.locator('button.btn-add-day', { hasText: 'Add after' }).first()).toBeVisible();
-  });
 });

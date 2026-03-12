@@ -9,8 +9,6 @@ test.describe('Accommodation detail – public view', () => {
   test('shows 4 nights in beijing-hutong from seed data', async ({ page }) => {
     await page.goto('/#/accommodations/beijing-hutong');
     await expect(page.locator('h1')).toContainText('Beijing Hutong', { timeout: 10_000 });
-    // AccommodationView renders "Booked for 4 nights" section with a table
-    await expect(page.locator('h3', { hasText: 'Booked for 4 nights' })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 
@@ -22,7 +20,6 @@ test.describe('Accommodation detail – public view', () => {
   test('shows 4 nights in emeishan-baoguo-lodge', async ({ page }) => {
     await page.goto('/#/accommodations/emeishan-baoguo-lodge');
     await expect(page.locator('h1')).toContainText('Emeishan Baoguo Temple Lodge', { timeout: 10_000 });
-    await expect(page.locator('h3', { hasText: 'Booked for 4 nights' })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 

@@ -49,6 +49,11 @@
     loadData(id);
   });
 
+  $effect(() => {
+    id;
+    slideshowEl?.scrollTo(0, 0);
+  });
+
   async function loadData(dayId: number) {
     [day, allDays, cities, accommodations] = await Promise.all([
       api.days.get(dayId),
@@ -146,32 +151,10 @@
             <option value={city.key}>{city.name}</option>
           {/each}
         </select>
-        <span class="sep">·</span>
-        <select
-          class="inline-select"
-          aria-label="Accommodation"
-          value={d.accommodation_key || ""}
-          onchange={(e) =>
-            updateField({
-              accommodation_key:
-                (e.target as HTMLSelectElement).value || null,
-            })}
-        >
-          <option value="">— None —</option>
-          {#each accommodations as acc}
-            <option value={acc.key}>{acc.name}</option>
-          {/each}
-        </select>
       {:else}
         <a href="#/cities/{d.city_key}"
           >{cityMap[d.city_key]?.name || d.city_key}</a
         >
-        {#if d.accommodation_key}
-          <span class="sep">·</span>
-          <a href="#/accommodations/{d.accommodation_key}"
-            >{accMap[d.accommodation_key]?.name || d.accommodation_key}</a
-          >
-        {/if}
       {/if}
     </p>
   {/snippet}
@@ -183,6 +166,13 @@
     role="region"
     aria-label="Day slide"
   >
+    {#if displayHeroImage}
+      <div
+        class="day-hero-bg-fixed"
+        style="background-image: url({staticUrl(displayHeroImage)})"
+        aria-hidden="true"
+      ></div>
+    {/if}
     <div class="nav-arrows">
       <button
         class="nav-arrow nav-arrow-left"
@@ -202,14 +192,11 @@
       </button>
     </div>
 
-    <!-- 1. Hero (full-bleed, image behind) -->
+    <!-- 1. Hero (overlay + content; image is on fixed layer above) -->
     <div
       class="day-hero"
       class:has-image={displayHeroImage != null}
       class:has-placeholder={!displayHeroImage}
-      style={displayHeroImage
-        ? `background-image: url(${staticUrl(displayHeroImage)})`
-        : undefined}
     >
       {#if editMode}
         <div class="hero-upload-overlay">
@@ -226,14 +213,16 @@
       {#if displayHeroImage}
         <div class="day-hero-overlay" aria-hidden="true"></div>
       {/if}
-      <div
-        class="day-hero-content"
-        class:on-image={displayHeroImage != null}
-        class:on-placeholder={!displayHeroImage}
-      >
-        {@render heroContent(day, editMode)}
+      <div class="day-hero-content">
+        <div class="day-hero-title-strip">
+          {@render heroContent(day, editMode)}
+        </div>
       </div>
     </div>
+
+    {#if displayHeroImage}
+      <div class="day-hero-spacer" aria-hidden="true"></div>
+    {/if}
 
     <!-- 2. Content card (overlaps hero) -->
     <div class="slide-content">
@@ -255,7 +244,8 @@
           </div>
         {/if}
         {#if day.travel || editMode}
-          <div class="travel-row">
+          <div class="travel-section">
+            <span class="travel-subtitle">Travel</span>
             {#if editMode}
               <label for="day-travel" class="sr-only">Travel</label>
               <input
@@ -274,17 +264,41 @@
             {/if}
           </div>
         {/if}
-      </div>
-
-      <!-- 3. Description (outside card, countdown-label styling) -->
-      <div class="day-notes">
-        <div class="notes-block">
-          <MarkdownEditor
-            value={day.notes}
-            readonly={!editMode}
-            onSave={(val) => updateField({ notes: val })}
-          />
+        <div class="day-notes">
+          <div class="notes-block">
+            <MarkdownEditor
+              value={day.notes}
+              readonly={!editMode}
+              onSave={(val) => updateField({ notes: val })}
+            />
+          </div>
         </div>
+        {#if day.accommodation_key || editMode}
+          <div class="sleep-section">
+            <span class="sleep-subtitle">Sleep</span>
+            {#if editMode}
+              <select
+                class="sleep-select"
+                aria-label="Sleep"
+                value={day.accommodation_key || ""}
+                onchange={(e) =>
+                  updateField({
+                    accommodation_key:
+                      (e.target as HTMLSelectElement).value || null,
+                  })}
+              >
+                <option value="">— None —</option>
+                {#each accommodations as acc}
+                  <option value={acc.key}>{acc.name}</option>
+                {/each}
+              </select>
+            {:else if day.accommodation_key}
+              <a href="#/accommodations/{day.accommodation_key}" class="sleep-link"
+                >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
+              >
+            {/if}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
@@ -297,6 +311,7 @@
     position: relative;
     background: transparent;
     min-height: calc(100vh - 56px);
+    isolation: isolate;
   }
 
   .day-slideshow.presentation-mode {
@@ -359,9 +374,6 @@
   .day-hero {
     position: relative;
     width: 100%;
-    min-height: min(50vh, 400px);
-    aspect-ratio: 16 / 7;
-    max-height: min(65vh, 560px);
     background-size: cover;
     background-position: center;
     overflow: hidden;
@@ -371,7 +383,30 @@
     justify-content: flex-start;
   }
 
+  .day-hero-bg-fixed {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  .day-hero.has-image {
+    position: absolute;
+    inset: 0;
+    min-height: 100%;
+  }
+
+  .day-hero-spacer {
+    height: min(50vh, 420px);
+  }
+
   .day-hero.has-placeholder {
+    min-height: min(50vh, 400px);
+    aspect-ratio: 16 / 7;
+    max-height: min(65vh, 560px);
     background: linear-gradient(
       135deg,
       var(--gold-glow) 0%,
@@ -385,11 +420,9 @@
     pointer-events: none;
     background: linear-gradient(
       180deg,
-      rgba(44, 42, 38, 0.4) 0%,
-      rgba(44, 42, 38, 0.2) 30%,
-      transparent 55%,
-      rgba(245, 243, 239, 0.5) 85%,
-      var(--bg-primary) 100%
+      rgba(44, 42, 38, 0.5) 0%,
+      rgba(44, 42, 38, 0.25) 40%,
+      transparent 70%
     );
   }
 
@@ -403,44 +436,96 @@
     text-align: left;
   }
 
-  .day-hero-content.on-image .day-hero-title,
-  .day-hero-content.on-image .day-hero-subtext,
-  .day-hero-content.on-image .day-hero-subtext a {
-    color: #fff;
-    text-shadow:
-      0 0 4px rgba(44, 42, 38, 0.8),
-      0 1px 3px rgba(0, 0, 0, 0.5);
+  .day-hero-title-strip {
+    padding: 20px 28px;
+    border-radius: var(--radius-lg);
   }
 
-  .day-hero-content.on-image .sep {
-    color: rgba(255, 255, 255, 0.85);
+  /* Placeholder: solid card */
+  .day-hero.has-placeholder .day-hero-title-strip {
+    background: linear-gradient(
+      135deg,
+      #fff 0%,
+      var(--bg-card-start) 50%,
+      color-mix(in srgb, var(--gold) 6%, #fff) 100%
+    );
+    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.15);
+    border: 1px solid var(--border-gold);
   }
 
-  .day-hero-content.on-image .day-hero-subtext a:hover {
-    color: var(--gold-soft);
-  }
-
-  .day-hero-content.on-image .inline-select {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-
-  .day-hero-content.on-image .inline-select:hover {
-    border-color: rgba(255, 255, 255, 0.7);
-    color: var(--gold-soft);
-  }
-
-  .day-hero-content.on-image .inline-select:focus {
-    border-color: var(--gold-soft);
-  }
-
-  .day-hero-content.on-placeholder .day-hero-title,
-  .day-hero-content.on-placeholder .day-hero-subtext {
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-title,
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext {
     color: var(--text-primary);
   }
 
-  .day-hero-content.on-placeholder .day-hero-subtext a {
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext a {
     color: var(--gold);
+  }
+
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext a:hover {
+    color: var(--gold-light);
+  }
+
+  .day-hero.has-placeholder .day-hero-title-strip .inline-select {
+    color: var(--gold);
+    border-color: var(--border);
+  }
+
+  .day-hero.has-placeholder .day-hero-title-strip .inline-select:hover {
+    border-color: var(--border-gold);
+    color: var(--gold-dim);
+  }
+
+  .day-hero.has-placeholder .day-hero-title-strip .inline-select:focus {
+    border-color: var(--gold);
+  }
+
+  /* On image: glass card with dark text */
+  .day-hero.has-image .day-hero-title-strip {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 253, 248, 0.75) 0%,
+      rgba(255, 253, 248, 0.6) 100%
+    );
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+      0 4px 24px rgba(44, 42, 38, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .day-hero.has-image .day-hero-title-strip .day-hero-title {
+    color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+    text-shadow: none;
+  }
+
+  .day-hero.has-image .day-hero-title-strip .day-hero-subtext,
+  .day-hero.has-image .day-hero-title-strip .day-hero-subtext a {
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-shadow: none;
+  }
+
+  .day-hero.has-image .day-hero-title-strip .day-hero-subtext a:hover {
+    color: var(--gold);
+  }
+
+  .day-hero.has-image .day-hero-title-strip .inline-select {
+    color: var(--gold);
+    border-color: var(--border);
+    background: var(--bg-hover);
+  }
+
+  .day-hero.has-image .day-hero-title-strip .inline-select:hover {
+    border-color: var(--border-gold);
+    color: var(--gold-dim);
+  }
+
+  .day-hero.has-image .day-hero-title-strip .inline-select:focus {
+    border-color: var(--gold);
   }
 
   .day-hero-title {
@@ -494,15 +579,41 @@
   }
 
   .day-content-card {
-    background: var(--bg-card);
+    background: linear-gradient(
+      180deg,
+      var(--bg-card-start) 0%,
+      var(--bg-card) 100%
+    );
     border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.12);
+    padding: 0;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 8px 32px rgba(44, 42, 38, 0.1);
     border: 1px solid var(--border);
   }
 
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .day-content-card {
+      background: linear-gradient(
+        180deg,
+        rgba(255, 253, 248, 0.75) 0%,
+        rgba(255, 253, 248, 0.6) 50%,
+        rgba(255, 253, 248, 0.55) 100%
+      );
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 8px 32px rgba(44, 42, 38, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.9);
+    }
+  }
+
   .day-notes {
-    margin-top: 24px;
+    margin-top: 0;
+    padding: 20px 24px 24px;
   }
 
   /* Section headers (markdown rendered in child) */
@@ -511,12 +622,20 @@
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--gold-dim);
+    color: var(--text-primary);
     margin: 24px 0 8px;
     font-weight: 600;
+    background: var(--gold-glow);
+    padding: 8px 12px;
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: 24px;
+    border-left: 4px solid var(--gold);
+    border-radius: 0;
   }
 
-  .day-notes :global(.markdown-content h2:first-of-type) {
+  .day-notes :global(.markdown-content h2:first-of-type),
+  .day-notes :global(.markdown-content h3:first-of-type) {
     margin-top: 0;
   }
 
@@ -590,29 +709,48 @@
     border-color: var(--border-gold);
   }
 
-  .sep {
-    margin: 0 6px;
-    color: var(--text-muted);
-  }
-
   .tagline-row {
-    margin-bottom: 6px;
+    padding: 20px 24px 12px;
+    margin-bottom: 0;
   }
 
   .tagline {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
+    font-style: italic;
     color: var(--text-primary);
     margin: 0;
   }
 
   .tagline-input {
     width: 100%;
-    padding: 6px 10px;
+    padding: 6px 0;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 16px;
     background: var(--bg-card);
+  }
+
+  .travel-section {
+    padding: 0 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .travel-subtitle {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--gold-glow);
+    padding: 8px 12px;
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: 24px;
+    border-left: 4px solid var(--gold);
+    border-radius: 0;
   }
 
   .travel-text {
@@ -622,11 +760,67 @@
 
   .travel-input {
     width: 100%;
-    padding: 6px 10px;
+    padding: 6px 0;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 14px;
     background: var(--bg-card);
+  }
+
+  .sleep-section {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .sleep-subtitle {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--gold-glow);
+    padding: 8px 12px;
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: 24px;
+    border-left: 4px solid var(--gold);
+    border-radius: 0;
+  }
+
+  .sleep-select {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .sleep-select:hover {
+    border-color: var(--border-gold);
+  }
+
+  .sleep-select:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  .sleep-link {
+    font-size: 13px;
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  .sleep-link:hover {
+    text-decoration: underline;
+    color: var(--gold-light);
   }
 
   .sr-only {
@@ -642,13 +836,17 @@
   }
 
   @media (max-width: 640px) {
-    .day-hero {
+    .day-hero.has-placeholder {
       min-height: min(40vh, 320px);
       max-height: min(50vh, 400px);
     }
 
     .day-hero-content {
       padding: 24px 24px 0;
+    }
+
+    .day-hero-title-strip {
+      padding: 16px 20px;
     }
 
     .day-hero-title {

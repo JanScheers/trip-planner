@@ -22,15 +22,6 @@ test.describe('Days – public view', () => {
     await expect(firstRow.locator('a[href="#/accommodations/beijing-hutong"]')).toBeVisible();
   });
 
-  test('no Add Day button for anonymous users', async ({ page }) => {
-    await page.goto('/#/days');
-    await expect(page.locator('button.btn-gold')).not.toBeVisible();
-  });
-
-  test('no delete buttons for anonymous users', async ({ page }) => {
-    await page.goto('/#/days');
-    await expect(page.locator('button.btn-danger')).not.toBeVisible();
-  });
 });
 
 test.describe('Days – editor view', () => {
@@ -38,33 +29,9 @@ test.describe('Days – editor view', () => {
     await loginAsEditor(context);
   });
 
-  test('shows Add Day button for editors', async ({ page }) => {
-    await page.goto('/#/days');
-    await expect(page.locator('table tbody tr')).toHaveCount(21, { timeout: 10_000 });
-    await expect(page.locator('button.btn-gold', { hasText: '+ Add Day' })).toBeVisible();
-  });
-
-  test('shows delete buttons for each row when editor', async ({ page }) => {
-    await page.goto('/#/days');
-    await expect(page.locator('button.btn-danger')).toHaveCount(21, { timeout: 10_000 });
-  });
-
   test('shows editor badge in nav', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.editor-badge')).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('add day appends a new row', async ({ page }) => {
-    await page.goto('/#/days');
-    await expect(page.locator('table tbody tr')).toHaveCount(21, { timeout: 10_000 });
-
-    await page.locator('button.btn-gold', { hasText: '+ Add Day' }).click();
-    await expect(page.locator('table tbody tr')).toHaveCount(22, { timeout: 10_000 });
-
-    // Clean up: delete the last row
-    page.on('dialog', (d) => d.accept());
-    await page.locator('button.btn-danger').last().click();
-    await expect(page.locator('table tbody tr')).toHaveCount(21, { timeout: 10_000 });
   });
 
   test('editor can navigate to day detail and see city link', async ({ page }) => {

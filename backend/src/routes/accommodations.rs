@@ -8,6 +8,32 @@ use crate::auth::{AppState, RequireEditor};
 use crate::error::{bad_request, internal, not_found};
 use crate::models::*;
 
+fn slugify(s: &str) -> String {
+    let s = s.trim().to_lowercase();
+    let s: String = s
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c
+            } else if c == ' ' || c == '-' {
+                '-'
+            } else {
+                '\0'
+            }
+        })
+        .collect();
+    let s: String = s
+        .split('-')
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    if s.is_empty() {
+        "unnamed".to_string()
+    } else {
+        s
+    }
+}
+
 pub async fn get_accommodations(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let accs: Vec<Accommodation> = sqlx::query_as("SELECT * FROM accommodations ORDER BY key")
         .fetch_all(&state.pool)
@@ -36,10 +62,25 @@ pub async fn create_accommodation(
     State(state): State<Arc<AppState>>,
     Json(body): Json<CreateAccommodation>,
 ) -> impl IntoResponse {
+    let base_key = slugify(&body.name);
+    let mut key = base_key.clone();
+    let mut n = 2;
+    loop {
+        let exists: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM accommodations WHERE key = ?")
+            .bind(&key)
+            .fetch_one(&state.pool)
+            .await
+            .unwrap_or((0,));
+        if exists.0 == 0 {
+            break;
+        }
+        key = format!("{}-{}", base_key, n);
+        n += 1;
+    }
     match sqlx::query_as::<_, Accommodation>(
         "INSERT INTO accommodations (key, name, link, notes) VALUES (?, ?, '', '') RETURNING *",
     )
-    .bind(&body.key)
+    .bind(&key)
     .bind(&body.name)
     .fetch_one(&state.pool)
     .await
@@ -95,6 +136,14 @@ pub async fn delete_accommodation(
     State(state): State<Arc<AppState>>,
     Path(key): Path<String>,
 ) -> impl IntoResponse {
+    if let Err(e) = sqlx::query("UPDATE days SET accommodation_key = NULL WHERE accommodation_key = ?")
+        .bind(&key)
+        .execute(&state.pool)
+        .await
+    {
+        return internal(e.to_string());
+    }
+
     match sqlx::query("DELETE FROM accommodations WHERE key = ?")
         .bind(&key)
         .execute(&state.pool)

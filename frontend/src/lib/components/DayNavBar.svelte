@@ -6,13 +6,9 @@
   let {
     currentDayId = null,
     presentationMode = false,
-    onEnterPresentation,
-    onExitPresentation,
   }: {
     currentDayId?: number | null;
     presentationMode?: boolean;
-    onEnterPresentation?: () => void;
-    onExitPresentation?: () => void;
   } = $props();
 
   let days: Day[] = $state([]);
@@ -59,25 +55,6 @@
         </a>
       {/each}
     </div>
-    {#if presentationMode && onExitPresentation}
-      <button
-        class="fullscreen-btn"
-        onclick={onExitPresentation}
-        title="Exit full screen"
-        aria-label="Exit full screen"
-      >
-        ✕
-      </button>
-    {:else if onEnterPresentation}
-      <button
-        class="fullscreen-btn"
-        onclick={onEnterPresentation}
-        title="Full screen"
-        aria-label="Full screen"
-      >
-        ⛶
-      </button>
-    {/if}
   </div>
 {/if}
 
@@ -85,7 +62,7 @@
   .day-nav-bar {
     display: flex;
     align-items: stretch;
-    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(44, 42, 38, 0.06);
   }
 
@@ -100,29 +77,9 @@
     margin: 0;
   }
 
-  .fullscreen-btn {
-    flex-shrink: 0;
-    align-self: center;
-    margin: 0 8px;
-    font-size: 14px;
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
-    padding: 4px 8px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.15s, color 0.15s;
-  }
-
-  .fullscreen-btn:hover {
-    opacity: 1;
-    color: var(--gold);
-  }
-
   .progress-segment {
     flex: 1;
-    height: 44px;
+    height: var(--day-nav-bar-height);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -135,11 +92,21 @@
 
   .progress-segment.past,
   .progress-segment.current {
-    background: color-mix(in srgb, var(--seg-color) 35%, var(--bg-secondary));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--seg-color) 70%, white) 0%,
+      color-mix(in srgb, var(--seg-color) 55%, var(--bg-secondary)) 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 
   .progress-segment.future {
-    background: color-mix(in srgb, var(--seg-color) 30%, var(--bg-secondary));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--seg-color) 45%, var(--bg-secondary)) 0%,
+      color-mix(in srgb, var(--seg-color) 35%, var(--bg-secondary)) 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .progress-segment:hover {
@@ -149,12 +116,22 @@
   }
 
   .progress-segment.current {
-    box-shadow: 0 0 16px color-mix(in srgb, var(--seg-color) 50%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 16px color-mix(in srgb, var(--seg-color) 50%, transparent);
   }
 
   .progress-segment.viewing {
-    box-shadow: inset 0 0 0 2px var(--gold);
     z-index: 1;
+  }
+
+  .progress-segment.viewing::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--gold);
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   .segment-label {
@@ -175,7 +152,7 @@
     }
 
     .progress-segment {
-      height: 36px;
+      height: 48px;
     }
   }
 </style>

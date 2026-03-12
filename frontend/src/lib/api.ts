@@ -1,6 +1,6 @@
 import type {
   Day, CreateDay, UpdateDay,
-  City, UpdateCity,
+  City, CreateCity, UpdateCity,
   Accommodation, CreateAccommodation, UpdateAccommodation,
   AuthUser, UploadResponse
 } from './types';
@@ -20,8 +20,26 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...options.headers as Record<string, string> },
     ...options,
   });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.json();
+  const text = await res.text();
+  if (!res.ok) throw new Error(`${res.status}: ${text}`);
+  return text ? JSON.parse(text) : ({} as T);
+}
+
+/** Extract user-friendly error message from API error responses. */
+export function parseApiError(err: unknown): string {
+  if (err instanceof Error) {
+    const idx = err.message.indexOf(' ');
+    if (idx > 0) {
+      try {
+        const json = JSON.parse(err.message.slice(idx + 1));
+        if (typeof json.error === 'string') return json.error;
+      } catch {
+        /* ignore parse failure */
+      }
+    }
+    return err.message;
+  }
+  return String(err);
 }
 
 export const api = {
@@ -40,7 +58,9 @@ export const api = {
   cities: {
     list: () => request<City[]>('/api/cities'),
     get: (key: string) => request<City>(`/api/cities/${key}`),
+    create: (data: CreateCity) => request<City>('/api/cities', { method: 'POST', body: JSON.stringify(data) }),
     update: (key: string, data: UpdateCity) => request<City>(`/api/cities/${key}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (key: string) => request<string>(`/api/cities/${key}`, { method: 'DELETE' }),
   },
   accommodations: {
     list: () => request<Accommodation[]>('/api/accommodations'),

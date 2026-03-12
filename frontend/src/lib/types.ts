@@ -39,6 +39,14 @@ export interface City {
   lng: number | null;
 }
 
+export interface CreateCity {
+  name: string;
+  chinese_name?: string;
+  tagline?: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
 export interface UpdateCity {
   name?: string;
   chinese_name?: string;
@@ -60,7 +68,6 @@ export interface Accommodation {
 }
 
 export interface CreateAccommodation {
-  key: string;
   name: string;
 }
 

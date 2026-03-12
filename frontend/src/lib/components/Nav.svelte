@@ -6,11 +6,15 @@
     user,
     editMode,
     isHomePage,
+    isDayPage = false,
+    onEnterPresentation,
     ontoggleedit,
   }: {
     user: AuthUser | null;
     editMode: boolean;
     isHomePage: boolean;
+    isDayPage?: boolean;
+    onEnterPresentation?: () => void;
     ontoggleedit: () => void;
   } = $props();
 
@@ -35,7 +39,7 @@
     ? 'none'
     : 'auto'};"
 >
-  <div class="nav-inner container">
+  <div class="nav-inner">
     <div class="nav-left">
       <a href="#/" class="nav-brand">
         <span class="brand-icon">🏯</span>
@@ -44,7 +48,7 @@
       <div class="nav-links">
         <a href="#/days" class="nav-link">Itinerary</a>
         <a href="#/cities" class="nav-link">Cities</a>
-        <a href="#/accommodations" class="nav-link">Accommodations</a>
+        <a href="#/accommodations" class="nav-link">Stays</a>
       </div>
     </div>
     <div class="nav-right">
@@ -55,11 +59,21 @@
         <span class="user-name">{user.name}</span>
         {#if user.is_editor}
           <button
-            class="edit-toggle"
+            class="nav-action-btn edit-toggle"
             class:active={editMode}
             onclick={ontoggleedit}
           >
             {editMode ? "Editing" : "Edit"}
+          </button>
+        {/if}
+        {#if isDayPage && onEnterPresentation}
+          <button
+            class="nav-action-btn"
+            onclick={onEnterPresentation}
+            title="Full screen"
+            aria-label="Full screen"
+          >
+            ⛶
           </button>
         {/if}
         <a href={api.auth.logoutUrl} class="btn-outline btn-sm">Logout</a>
@@ -76,14 +90,8 @@
 
 <style>
   nav {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(250, 248, 244, 0.98) 100%
-    );
+    background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
     border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 2px 20px rgba(44, 42, 38, 0.06);
   }
 
@@ -91,9 +99,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    max-width: 1400px;
+    padding: 12px 20px;
+    min-height: var(--nav-bar-height);
+    width: 100%;
   }
 
   .nav-left {
@@ -171,29 +179,33 @@
     color: var(--text-primary);
   }
 
-  .edit-toggle {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .nav-action-btn {
+    font-size: 12px;
     background: transparent;
-    color: var(--text-muted);
-    padding: 3px 10px;
+    padding: 4px 10px;
     border-radius: 99px;
     font-weight: 600;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-gold);
     cursor: pointer;
+    color: var(--gold-dim);
     transition:
       color 0.15s,
       border-color 0.15s,
       background 0.15s;
   }
 
-  .edit-toggle:hover {
+  .nav-action-btn:hover {
     color: var(--gold);
-    border-color: var(--border-gold);
+    border-color: var(--gold);
   }
 
-  .edit-toggle.active {
+  .nav-action-btn.edit-toggle {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .nav-action-btn.edit-toggle.active {
     background: var(--gold-glow);
     color: var(--gold);
     border-color: var(--border-gold);

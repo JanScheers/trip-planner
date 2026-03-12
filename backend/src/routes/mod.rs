@@ -24,10 +24,15 @@ pub fn router() -> Router<Arc<AppState>> {
                 .put(days::update_day)
                 .delete(days::delete_day),
         )
-        .route("/api/cities", get(cities::get_cities))
+        .route(
+            "/api/cities",
+            get(cities::get_cities).post(cities::create_city),
+        )
         .route(
             "/api/cities/{key}",
-            get(cities::get_city).put(cities::update_city),
+            get(cities::get_city)
+                .put(cities::update_city)
+                .delete(cities::delete_city),
         )
         .route(
             "/api/accommodations",

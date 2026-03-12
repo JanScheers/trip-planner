@@ -13,7 +13,7 @@
   --gold-soft: #e8d5a3;
   --gold-dim: #8a6d0a;
   --gold-glow: rgba(184, 134, 11, 0.12);
-  --gold-gradient: linear-gradient(135deg, #c99a1a 0%, #b8860b 50%, #9a7209 100%);
+  --gold-gradient: linear-gradient(135deg, #e8c547 0%, #c99a1a 25%, #b8860b 50%, #8a6d0a 100%);
   --text-primary: #2c2a26;
   --text-secondary: #5c5852;
   --text-muted: #7a756e;
@@ -23,6 +23,8 @@
   --success: #15803d;
   --radius: 8px;
   --radius-lg: 12px;
+  --nav-bar-height: 48px;
+  --day-nav-bar-height: 56px;
   --transition: 0.2s ease;
   /* Gradient tokens */
   --gradient-page: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-primary-end) 100%);
@@ -79,12 +81,16 @@ button {
   background: var(--gold-gradient);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.25);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(184, 134, 11, 0.35);
 }
 
 .btn-gold:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.35);
+  filter: brightness(1.06);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 8px 28px rgba(184, 134, 11, 0.45);
 }
 
 .btn-outline {

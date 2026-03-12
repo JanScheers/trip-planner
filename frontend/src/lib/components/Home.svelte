@@ -61,7 +61,6 @@
       <div class="lantern lantern-1"></div>
       <div class="lantern lantern-2"></div>
       <div class="lantern lantern-3"></div>
-      <div class="hero-glow"></div>
     </div>
 
     <div class="hero-content">
@@ -258,36 +257,6 @@
     );
   }
 
-  .hero-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /* Cover full hero and beyond on any viewport */
-    width: max(120%, 800px);
-    height: max(140%, 900px);
-    min-width: 100%;
-    min-height: 100%;
-    background: radial-gradient(
-        ellipse 80% 50% at 50% 30%,
-        rgba(232, 213, 163, 0.4) 0%,
-        rgba(184, 134, 11, 0.12) 40%,
-        transparent 70%
-      ),
-      radial-gradient(
-        circle at 30% 40%,
-        rgba(184, 134, 11, 0.08) 0%,
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 70% 50%,
-        rgba(201, 154, 26, 0.06) 0%,
-        transparent 45%
-      );
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
   .lantern {
     position: absolute;
     width: 8px;
@@ -428,11 +397,18 @@
     flex-direction: column;
     align-items: center;
     min-width: 72px;
-    background: linear-gradient(180deg, #fff 0%, var(--bg-hover) 100%);
-    border: 1px solid var(--border);
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      var(--bg-hover) 50%,
+      rgba(232, 213, 163, 0.08) 100%
+    );
+    border: 1px solid var(--border-gold);
     border-radius: var(--radius-lg);
     padding: 12px 8px 10px;
-    box-shadow: 0 2px 8px rgba(44, 42, 38, 0.06);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(184, 134, 11, 0.08);
   }
 
   .countdown-value {
@@ -542,9 +518,13 @@
     background: linear-gradient(
       180deg,
       #fff 0%,
-      var(--bg-card-start) 100%
+      var(--bg-card-start) 50%,
+      rgba(232, 213, 163, 0.05) 100%
     ) !important;
-    box-shadow: 0 2px 16px rgba(44, 42, 38, 0.08) !important;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      0 8px 24px rgba(44, 42, 38, 0.08) !important;
+    border: 1px solid rgba(184, 134, 11, 0.12);
   }
 
   /* --- City Grid --- */
@@ -573,12 +553,16 @@
     text-decoration: none;
     color: inherit;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 20px rgba(44, 42, 38, 0.12);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 8px 24px rgba(44, 42, 38, 0.1);
   }
 
   .city-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 40px rgba(44, 42, 38, 0.18);
+    transform: translateY(-6px);
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 20px 48px rgba(44, 42, 38, 0.18);
   }
 
   .city-card-image {
@@ -692,11 +676,21 @@
 
   .progress-segment.past,
   .progress-segment.current {
-    background: var(--seg-color);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--seg-color) 70%, white) 0%,
+      var(--seg-color) 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 
   .progress-segment.future {
-    background: color-mix(in srgb, var(--seg-color) 22%, var(--bg-secondary));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--seg-color) 45%, var(--bg-secondary)) 0%,
+      color-mix(in srgb, var(--seg-color) 35%, var(--bg-secondary)) 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .progress-segment:hover {
@@ -706,7 +700,9 @@
   }
 
   .progress-segment.current {
-    box-shadow: 0 0 16px color-mix(in srgb, var(--seg-color) 50%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 0 16px color-mix(in srgb, var(--seg-color) 50%, transparent);
   }
 
   .segment-label {
