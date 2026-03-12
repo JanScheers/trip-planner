@@ -47,18 +47,22 @@ test.describe('City detail – editor view', () => {
     await loginAsEditor(context);
     await page.goto('/#/cities/xian');
     await expect(page.locator('h1')).toContainText("Xi'an", { timeout: 10_000 });
+    // Enable edit mode
+    await page.locator('button.edit-toggle', { hasText: 'Edit' }).click();
   });
 
   test('shows editable fields for editors', async ({ page }) => {
-    await expect(page.locator('label[for="city-name"]')).toBeVisible();
-    await expect(page.locator('label[for="city-chinese-name"]')).toBeVisible();
+    await expect(page.locator('input[aria-label="City name"]')).toBeVisible();
+    await expect(page.locator('input[aria-label="Chinese name"]')).toBeVisible();
   });
 
-  test('can update emoji field', async ({ page }) => {
-    const emojiInput = page.locator('input#city-emoji, input[placeholder*="moji"], input[id*="emoji"]');
-    if (await emojiInput.isVisible()) {
-      await emojiInput.fill('🏯');
-      await emojiInput.press('Tab');
+  test('can update emoji via picker', async ({ page }) => {
+    const emojiTrigger = page.locator('button.emoji-edit-trigger');
+    if (await emojiTrigger.isVisible()) {
+      await emojiTrigger.click();
+      await expect(page.locator('emoji-picker')).toBeVisible({ timeout: 5000 });
+      // Click first emoji in the picker (pierces shadow DOM)
+      await page.locator('emoji-picker').locator('button').first().click();
       // Give the API call time to complete
       await page.waitForTimeout(500);
       // Reload to verify persistence

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "emoji-picker-element";
   import { api, staticUrl } from "../api";
   import { navigate } from "../router";
   import type { Day, City, Accommodation, AuthUser } from "../types";
@@ -23,6 +24,9 @@
   let allDays: Day[] = $state([]);
   let cities: City[] = $state([]);
   let accommodations: Accommodation[] = $state([]);
+  let showEmojiPicker = $state(false);
+  let pickerEl: HTMLElement | null = $state(null);
+  let emojiContainerEl: HTMLElement | null = $state(null);
 
   let canEdit = $derived(editMode);
   let dayIds = $derived(allDays.map((d) => d.id));
@@ -100,6 +104,41 @@
       year: "numeric",
     });
   }
+
+  function handleEmojiClick(e: CustomEvent<{ unicode: string }>) {
+    const unicode = e.detail?.unicode;
+    if (unicode) {
+      updateField({ emoji: unicode });
+      showEmojiPicker = false;
+    }
+  }
+
+  $effect(() => {
+    const el = pickerEl;
+    if (!el) return;
+    el.addEventListener("emoji-click", handleEmojiClick as EventListener);
+    return () =>
+      el.removeEventListener("emoji-click", handleEmojiClick as EventListener);
+  });
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as Node;
+    if (
+      showEmojiPicker &&
+      emojiContainerEl &&
+      !emojiContainerEl.contains(target)
+    ) {
+      showEmojiPicker = false;
+    }
+  }
+
+  $effect(() => {
+    if (showEmojiPicker) {
+      document.addEventListener("click", handleClickOutside);
+      return () =>
+        document.removeEventListener("click", handleClickOutside);
+    }
+  });
 </script>
 
 {#if day}
@@ -129,49 +168,128 @@
       </button>
     </div>
 
-    <div class="slide-content">
-      <!-- 1. Hero -->
-      <div
-        class="notion-hero"
-        class:has-image={displayHeroImage != null && !canEdit}
-        class:has-placeholder={!displayHeroImage && !canEdit}
-        style={displayHeroImage && !canEdit
-          ? `background-image: url(${staticUrl(displayHeroImage)})`
-          : undefined}
-      >
-        {#if canEdit}
-          <div class="hero-upload">
-            <ImageUpload
-              currentImage={day.hero_image}
-              onUpload={(url) => updateField({ hero_image: url })}
-            />
-          </div>
-        {:else if !displayHeroImage}
-          <span class="hero-placeholder-emoji">{day.emoji || "📅"}</span>
-        {:else}
-          <div class="hero-fade-overlay" aria-hidden="true"></div>
-        {/if}
-      </div>
-
-      <!-- 2. Content card (title + body) -->
-      <div class="day-content-card">
-      <!-- Title & subtext -->
-      <div class="notion-header">
-        <h1 class="notion-title">
-          {#if day.emoji}<span class="emoji">{day.emoji}</span>{/if}
-          {formatDate(day.date)}
-        </h1>
-        <p class="notion-subtext">
-          <a href="#/cities/{day.city_key}"
-            >{cityMap[day.city_key]?.name || day.city_key}</a
-          >
-          {#if day.accommodation_key}
-            <span class="sep">·</span>
-            <a href="#/accommodations/{day.accommodation_key}"
-              >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
+    <!-- 1. Hero (full-bleed, image behind) -->
+    <div
+      class="day-hero"
+      class:has-image={displayHeroImage != null && !canEdit}
+      class:has-placeholder={!displayHeroImage && !canEdit}
+      class:edit-mode={canEdit}
+      style={displayHeroImage && !canEdit
+        ? `background-image: url(${staticUrl(displayHeroImage)})`
+        : undefined}
+    >
+      {#if canEdit}
+        <div class="hero-upload">
+          <ImageUpload
+            currentImage={day.hero_image}
+            onUpload={(url) => updateField({ hero_image: url })}
+          />
+        </div>
+      {:else if !displayHeroImage}
+        <span class="hero-placeholder-emoji">{day.emoji || "📅"}</span>
+        <div class="day-hero-content on-placeholder">
+          <h1 class="day-hero-title">
+            {#if day.emoji}<span class="emoji">{day.emoji}</span>{/if}
+            {formatDate(day.date)}
+          </h1>
+          <p class="day-hero-subtext">
+            <a href="#/cities/{day.city_key}"
+              >{cityMap[day.city_key]?.name || day.city_key}</a
             >
-          {/if}
-        </p>
+            {#if day.accommodation_key}
+              <span class="sep">·</span>
+              <a href="#/accommodations/{day.accommodation_key}"
+                >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
+              >
+            {/if}
+          </p>
+        </div>
+      {:else}
+        <div class="day-hero-overlay" aria-hidden="true"></div>
+        <div class="day-hero-content on-image">
+          <h1 class="day-hero-title">
+            {#if day.emoji}<span class="emoji">{day.emoji}</span>{/if}
+            {formatDate(day.date)}
+          </h1>
+          <p class="day-hero-subtext">
+            <a href="#/cities/{day.city_key}"
+              >{cityMap[day.city_key]?.name || day.city_key}</a
+            >
+            {#if day.accommodation_key}
+              <span class="sep">·</span>
+              <a href="#/accommodations/{day.accommodation_key}"
+                >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
+              >
+            {/if}
+          </p>
+        </div>
+      {/if}
+    </div>
+
+    <!-- 2. Content card (overlaps hero) -->
+    <div class="slide-content">
+      <div class="day-content-card">
+        {#if canEdit}
+          <div class="notion-header edit-header">
+            <h1 class="notion-title">
+              <div class="emoji-slot" bind:this={emojiContainerEl}>
+                <button
+                  type="button"
+                  class="emoji-edit-trigger"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    showEmojiPicker = !showEmojiPicker;
+                  }}
+                  aria-label="Change emoji"
+                  aria-expanded={showEmojiPicker}
+                  aria-haspopup="dialog"
+                >
+                  <span class="emoji">{day.emoji || "📅"}</span>
+                </button>
+                {#if showEmojiPicker}
+                  <div class="emoji-picker-popover">
+                    <emoji-picker
+                      class="light"
+                      bind:this={pickerEl}
+                    ></emoji-picker>
+                  </div>
+                {/if}
+              </div>
+              {formatDate(day.date)}
+            </h1>
+            <p class="notion-subtext notion-subtext-edit">
+              <select
+                class="inline-select"
+                aria-label="City"
+                value={day.city_key}
+                onchange={(e) =>
+                  updateField({
+                    city_key: (e.target as HTMLSelectElement).value,
+                  })}
+              >
+                {#each cities as city}
+                  <option value={city.key}>{city.name}</option>
+                {/each}
+              </select>
+              <span class="sep">·</span>
+              <select
+                class="inline-select"
+                aria-label="Accommodation"
+                value={day.accommodation_key || ""}
+                onchange={(e) =>
+                  updateField({
+                    accommodation_key:
+                      (e.target as HTMLSelectElement).value || null,
+                  })}
+              >
+                <option value="">— None —</option>
+                {#each accommodations as acc}
+                  <option value={acc.key}>{acc.name}</option>
+                {/each}
+              </select>
+            </p>
+          </div>
+        {/if}
         {#if day.tagline || canEdit}
           <div class="tagline-row">
             {#if canEdit}
@@ -210,57 +328,8 @@
         {/if}
       </div>
 
-      <!-- 3. Content -->
-      <div class="notion-body">
-        {#if canEdit}
-          <div class="edit-fields card">
-            <div class="field-group">
-              <label for="day-city">City</label>
-              <select
-                id="day-city"
-                value={day.city_key}
-                onchange={(e) =>
-                  updateField({ city_key: (e.target as HTMLSelectElement).value })}
-              >
-                {#each cities as city}
-                  <option value={city.key}>{city.name}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="day-accommodation">Accommodation</label>
-              <select
-                id="day-accommodation"
-                value={day.accommodation_key || ""}
-                onchange={(e) =>
-                  updateField({
-                    accommodation_key:
-                      (e.target as HTMLSelectElement).value || null,
-                  })}
-              >
-                <option value="">— None —</option>
-                {#each accommodations as acc}
-                  <option value={acc.key}>{acc.name}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="day-emoji">Emoji</label>
-              <input
-                id="day-emoji"
-                type="text"
-                value={day.emoji || ""}
-                onchange={(e) =>
-                  updateField({
-                    emoji: (e.target as HTMLInputElement).value || null,
-                  })}
-                placeholder="e.g. 🏯"
-                style="max-width: 80px;"
-              />
-            </div>
-          </div>
-        {/if}
-
+      <!-- 3. Description (outside card, countdown-label styling) -->
+      <div class="day-notes">
         <div class="notes-block">
           <MarkdownEditor
             value={day.notes}
@@ -268,7 +337,6 @@
             onSave={(val) => updateField({ notes: val })}
           />
         </div>
-      </div>
       </div>
     </div>
   </div>
@@ -344,11 +412,124 @@
     cursor: not-allowed;
   }
 
-  .slide-content {
+  /* Full-bleed hero */
+  .day-hero {
+    position: relative;
+    width: 100%;
+    min-height: min(50vh, 400px);
+    aspect-ratio: 16 / 7;
+    max-height: min(65vh, 560px);
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .day-hero.edit-mode {
+    min-height: 200px;
+    aspect-ratio: auto;
+    max-height: 280px;
+    justify-content: center;
+  }
+
+  .day-hero.has-placeholder {
+    background: linear-gradient(
+      135deg,
+      var(--gold-glow) 0%,
+      color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%
+    );
+  }
+
+  .day-hero-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(44, 42, 38, 0.4) 0%,
+      rgba(44, 42, 38, 0.2) 30%,
+      transparent 55%,
+      rgba(245, 243, 239, 0.5) 85%,
+      var(--bg-primary) 100%
+    );
+  }
+
+  .day-hero-content {
     position: relative;
     z-index: 1;
+    width: 100%;
     max-width: 720px;
     margin: 0 auto;
+    padding: 32px 48px 0;
+    text-align: left;
+  }
+
+  .day-hero-content.on-image .day-hero-title,
+  .day-hero-content.on-image .day-hero-subtext,
+  .day-hero-content.on-image .day-hero-subtext a {
+    color: #fff;
+    text-shadow:
+      0 0 4px rgba(44, 42, 38, 0.8),
+      0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  .day-hero-content.on-image .sep {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .day-hero-content.on-image .day-hero-subtext a:hover {
+    color: var(--gold-soft);
+  }
+
+  .day-hero-content.on-placeholder .day-hero-title,
+  .day-hero-content.on-placeholder .day-hero-subtext {
+    color: var(--text-primary);
+  }
+
+  .day-hero-content.on-placeholder .day-hero-subtext a {
+    color: var(--gold);
+  }
+
+  .day-hero-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+
+  .day-hero-subtext {
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .day-hero-subtext a {
+    text-decoration: none;
+  }
+
+  .day-hero-subtext a:hover {
+    text-decoration: underline;
+  }
+
+  .hero-placeholder-emoji {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    opacity: 0.5;
+  }
+
+  .hero-upload {
+    padding: 16px;
+  }
+
+  .slide-content {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    margin: -80px auto 0;
     padding: 0 48px 48px;
   }
 
@@ -356,57 +537,40 @@
     background: var(--bg-card);
     border-radius: var(--radius-lg);
     padding: 24px;
-    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
+    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.12);
     border: 1px solid var(--border);
   }
 
-  .notion-hero {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 8;
-    max-height: min(56vh, 520px);
-    background-size: cover;
-    background-position: center;
-    margin-bottom: 24px;
-    border-radius: var(--radius);
-    overflow: hidden;
+  .day-notes {
+    margin-top: 24px;
   }
 
-  .hero-fade-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      transparent 75%,
-      rgba(245, 243, 239, 0.4) 90%,
-      var(--bg-primary) 100%
-    );
+  /* Departure-in style for section headers (markdown rendered in child) */
+  .day-notes :global(.markdown-content h2),
+  .day-notes :global(.markdown-content h3) {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-dim);
+    margin: 24px 0 8px;
+    font-weight: 600;
   }
 
-  .notion-hero.has-placeholder {
-    background: linear-gradient(
-      135deg,
-      var(--gold-glow) 0%,
-      color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .day-notes :global(.markdown-content h2:first-of-type) {
+    margin-top: 0;
   }
 
-  .hero-placeholder-emoji {
-    font-size: 48px;
-    opacity: 0.6;
-  }
-
-  .hero-upload {
-    padding: 16px;
+  .day-notes :global(.markdown-content p) {
+    margin-bottom: 12px;
+    line-height: 1.65;
   }
 
   .notion-header {
     margin-bottom: 24px;
+  }
+
+  .notion-header.edit-header {
+    margin-bottom: 16px;
   }
 
   .notion-title {
@@ -420,19 +584,78 @@
     margin-right: 6px;
   }
 
+  .emoji-slot {
+    position: relative;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .emoji-edit-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    border-radius: var(--radius);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .emoji-edit-trigger:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .emoji-picker-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    z-index: 100;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  .emoji-picker-popover emoji-picker {
+    width: 320px;
+    height: 400px;
+  }
+
+  .notion-subtext-edit {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 6px;
+  }
+
+  .inline-select {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--gold);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 2px 4px;
+    cursor: pointer;
+    max-width: 200px;
+  }
+
+  .inline-select:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .inline-select:focus {
+    outline: none;
+    border-color: var(--border-gold);
+  }
+
   .notion-subtext {
     font-size: 14px;
     color: var(--text-primary);
     margin: 0 0 8px;
-  }
-
-  .notion-subtext a {
-    color: var(--gold);
-    text-decoration: none;
-  }
-
-  .notion-subtext a:hover {
-    text-decoration: underline;
   }
 
   .sep {
@@ -478,14 +701,6 @@
     background: var(--bg-card);
   }
 
-  .notion-body {
-    margin-top: 0;
-  }
-
-  .edit-fields {
-    margin-bottom: 20px;
-  }
-
   .notes-block {
     margin-top: 0;
   }
@@ -500,5 +715,25 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  @media (max-width: 640px) {
+    .day-hero {
+      min-height: min(40vh, 320px);
+      max-height: min(50vh, 400px);
+    }
+
+    .day-hero-content {
+      padding: 24px 24px 0;
+    }
+
+    .day-hero-title {
+      font-size: 26px;
+    }
+
+    .slide-content {
+      margin-top: -60px;
+      padding: 0 24px 32px;
+    }
   }
 </style>

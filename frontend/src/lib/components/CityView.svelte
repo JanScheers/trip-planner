@@ -1,4 +1,5 @@
 <script lang="ts">
+  import 'emoji-picker-element';
   import { api, staticUrl } from '../api';
   import { getCityColor } from '../cityColors';
   import { navigate } from '../router';
@@ -11,6 +12,9 @@
   let city: City | null = $state(null);
   let days: Day[] = $state([]);
   let cities: City[] = $state([]);
+  let showEmojiPicker = $state(false);
+  let pickerEl: HTMLElement | null = $state(null);
+  let emojiContainerEl: HTMLElement | null = $state(null);
 
   let canEdit = $derived(editMode);
   let cityDays = $derived(days.filter(d => d.city_key === key));
@@ -108,6 +112,35 @@
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   });
+
+  function handleEmojiClick(e: CustomEvent<{ unicode: string }>) {
+    const unicode = e.detail?.unicode;
+    if (unicode) {
+      updateField({ emoji: unicode });
+      showEmojiPicker = false;
+    }
+  }
+
+  $effect(() => {
+    const el = pickerEl;
+    if (!el) return;
+    el.addEventListener('emoji-click', handleEmojiClick as EventListener);
+    return () => el.removeEventListener('emoji-click', handleEmojiClick as EventListener);
+  });
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as Node;
+    if (showEmojiPicker && emojiContainerEl && !emojiContainerEl.contains(target)) {
+      showEmojiPicker = false;
+    }
+  }
+
+  $effect(() => {
+    if (showEmojiPicker) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  });
 </script>
 
 {#if city}
@@ -122,14 +155,66 @@
       ←
     </button>
     <div class="page-header">
-      {#if city.emoji}<span class="emoji-large">{city.emoji}</span>{/if}
-      <div>
-        <h1>{city.name}</h1>
-        {#if city.chinese_name}
-          <span class="chinese-name chinese-text">{city.chinese_name}</span>
+      <div class="emoji-slot" bind:this={emojiContainerEl}>
+        {#if canEdit}
+          <button
+            type="button"
+            class="emoji-edit-trigger"
+            onclick={(e) => { e.stopPropagation(); showEmojiPicker = !showEmojiPicker; }}
+            aria-label="Change emoji"
+            aria-expanded={showEmojiPicker}
+            aria-haspopup="dialog"
+          >
+            <span class="emoji-large">{city.emoji || '🏙️'}</span>
+          </button>
+          {#if showEmojiPicker}
+            <div class="emoji-picker-popover">
+              <emoji-picker
+                class="light"
+                bind:this={pickerEl}
+              ></emoji-picker>
+            </div>
+          {/if}
+        {:else}
+          {#if city.emoji}<span class="emoji-large">{city.emoji}</span>{/if}
         {/if}
-        {#if city.tagline}
-          <p class="city-tagline">{city.tagline}</p>
+      </div>
+      <div class="header-fields">
+        {#if canEdit}
+          <input
+            type="text"
+            class="header-name-input"
+            value={city.name}
+            onblur={(e) => updateField({ name: (e.target as HTMLInputElement).value })}
+            onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            aria-label="City name"
+          />
+          <input
+            type="text"
+            class="header-chinese-input chinese-text"
+            value={city.chinese_name}
+            placeholder="e.g. 北京"
+            onblur={(e) => updateField({ chinese_name: (e.target as HTMLInputElement).value })}
+            onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            aria-label="Chinese name"
+          />
+          <input
+            type="text"
+            class="header-tagline-input"
+            value={city.tagline}
+            placeholder="e.g. The Forbidden City, Great Wall & imperial grandeur"
+            onblur={(e) => updateField({ tagline: (e.target as HTMLInputElement).value })}
+            onkeydown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            aria-label="Tagline"
+          />
+        {:else}
+          <h1>{city.name}</h1>
+          {#if city.chinese_name}
+            <span class="chinese-name chinese-text">{city.chinese_name}</span>
+          {/if}
+          {#if city.tagline}
+            <p class="city-tagline">{city.tagline}</p>
+          {/if}
         {/if}
       </div>
     </div>
@@ -158,52 +243,6 @@
   {/if}
 
   <div class="detail-grid">
-    {#if canEdit}
-      <div class="card">
-        <div class="field-group">
-          <label for="city-name">Name</label>
-          <input
-            id="city-name"
-            type="text"
-            value={city.name}
-            onchange={(e) => updateField({ name: (e.target as HTMLInputElement).value })}
-          />
-        </div>
-        <div class="field-group">
-          <label for="city-chinese-name">Chinese Name</label>
-          <input
-            id="city-chinese-name"
-            type="text"
-            value={city.chinese_name}
-            onchange={(e) => updateField({ chinese_name: (e.target as HTMLInputElement).value })}
-            class="chinese-text"
-            placeholder="e.g. 北京"
-          />
-        </div>
-        <div class="field-group">
-          <label for="city-emoji">Emoji</label>
-          <input
-            id="city-emoji"
-            type="text"
-            value={city.emoji || ''}
-            onchange={(e) => updateField({ emoji: (e.target as HTMLInputElement).value || null })}
-            placeholder="e.g. 🏯"
-            style="max-width: 80px;"
-          />
-        </div>
-        <div class="field-group">
-          <label for="city-tagline">Tagline</label>
-          <input
-            id="city-tagline"
-            type="text"
-            value={city.tagline}
-            onchange={(e) => updateField({ tagline: (e.target as HTMLInputElement).value })}
-            placeholder="e.g. The Forbidden City, Great Wall & imperial grandeur"
-          />
-        </div>
-      </div>
-    {/if}
-
     <div class="card">
       <h3 class="section-title">About</h3>
       <MarkdownEditor
@@ -315,6 +354,96 @@
   .nav-arrow:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  .header-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-name-input,
+  .header-chinese-input,
+  .header-tagline-input {
+    font-family: inherit;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 2px 6px;
+    margin: -2px -6px;
+    width: 100%;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .header-name-input:hover,
+  .header-chinese-input:hover,
+  .header-tagline-input:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .header-name-input:focus,
+  .header-chinese-input:focus,
+  .header-tagline-input:focus {
+    outline: none;
+    background: var(--bg-card);
+    border-color: var(--border-gold);
+  }
+
+  .header-chinese-input {
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .header-tagline-input {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .emoji-slot {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .emoji-edit-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: var(--radius);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .emoji-edit-trigger:hover {
+    background: var(--bg-hover);
+    border-color: var(--border);
+  }
+
+  .emoji-picker-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    z-index: 100;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  .emoji-picker-popover emoji-picker {
+    width: 320px;
+    height: 400px;
   }
 
   .chinese-name {
