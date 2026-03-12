@@ -11,12 +11,16 @@
     editMode,
     slideshowEl = $bindable(undefined),
     presentationMode = false,
+    onEnterPresentation,
+    onExitPresentation,
   }: {
     id: number;
     user: AuthUser | null;
     editMode: boolean;
     slideshowEl?: HTMLDivElement | undefined;
     presentationMode?: boolean;
+    onEnterPresentation?: () => void;
+    onExitPresentation?: () => void;
   } = $props();
 
   let day: Day | null = $state(null);
@@ -121,6 +125,21 @@
         <span class="slide-indicator">
           Day {slideIndex} of {totalSlides}
         </span>
+        <button
+          class="presentation-btn"
+          onclick={() =>
+            presentationMode ? onExitPresentation?.() : onEnterPresentation?.()}
+          title={presentationMode
+            ? "Exit presentation (Esc)"
+            : "Enter presentation mode"}
+          aria-label={presentationMode ? "Exit presentation" : "Enter presentation mode"}
+        >
+          {#if presentationMode}
+            ✕ Exit
+          {:else}
+            ⛶ Full screen
+          {/if}
+        </button>
       </div>
     {/if}
 
@@ -305,6 +324,10 @@
     position: relative;
     z-index: 2;
     padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .slide-indicator {
@@ -312,8 +335,22 @@
     color: var(--text-secondary);
   }
 
+  .presentation-btn {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: var(--radius);
+  }
+
+  .presentation-btn:hover {
+    color: var(--gold);
+    border-color: var(--border-gold);
+  }
+
   .nav-arrows {
-    position: absolute;
+    position: fixed;
     left: 0;
     right: 0;
     top: 50%;
@@ -338,13 +375,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease,
+      opacity 0.25s ease,
+      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .nav-arrow:hover:not(:disabled) {
     background: color-mix(in srgb, var(--bg-card) 98%, transparent);
     border-color: var(--border-gold);
     color: var(--gold);
+    transform: scale(1.12);
+  }
+
+  .nav-arrow:active:not(:disabled) {
+    transform: scale(0.96);
   }
 
   .nav-arrow:disabled {

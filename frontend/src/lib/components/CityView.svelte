@@ -35,8 +35,6 @@
   }
 </script>
 
-<a href="#/" class="back-link">&larr; Back to Home</a>
-
 {#if city}
   <div class="page-header">
     {#if city.emoji}<span class="emoji-large">{city.emoji}</span>{/if}

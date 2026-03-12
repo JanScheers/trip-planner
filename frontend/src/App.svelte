@@ -13,6 +13,31 @@
   let route: Route = $state(parseHash());
   let user: AuthUser | null = $state(null);
   let editMode: boolean = $state(false);
+  let presentationMode: boolean = $state(false);
+  let mainEl: HTMLElement | undefined;
+
+  $effect(() => {
+    const handler = () => {
+      if (!document.fullscreenElement) {
+        presentationMode = false;
+      }
+    };
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  });
+
+  $effect(() => {
+    if (!presentationMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        document.exitFullscreen().catch(() => {
+          presentationMode = false;
+        });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
   $effect(() => {
     const handler = () => {
@@ -32,18 +57,23 @@
   });
 </script>
 
-<Nav
-  {user}
-  {editMode}
-  ontoggleedit={() => {
-    editMode = !editMode;
-  }}
-/>
+{#if !presentationMode}
+  <Nav
+    {user}
+    {editMode}
+    isHomePage={route.page === "home"}
+    ontoggleedit={() => {
+      editMode = !editMode;
+    }}
+  />
+{/if}
 
 <main
+  bind:this={mainEl}
   class="main-content"
   class:container={route.page !== "home" && route.page !== "day"}
-  style="padding-top: {route.page === 'home' ? 0 : 56}px; padding-bottom: 48px;"
+  class:presentation-fullscreen={presentationMode && route.page === "day"}
+  style="padding-top: {presentationMode ? 0 : route.page === 'home' ? 0 : 72}px; padding-bottom: {presentationMode ? 0 : 48}px;"
 >
   {#if route.page === "home"}
     <Home />
@@ -52,10 +82,36 @@
   {:else if route.page === "cities"}
     <CitiesView />
   {:else if route.page === "day"}
-    <DayView id={Number(route.params.id)} {user} {editMode} />
+    <DayView
+      id={Number(route.params.id)}
+      {user}
+      {editMode}
+      {presentationMode}
+      onEnterPresentation={() => {
+        presentationMode = true;
+        mainEl?.requestFullscreen().catch(() => {
+          presentationMode = false;
+        });
+      }}
+      onExitPresentation={() => {
+        document.exitFullscreen().catch(() => {
+          presentationMode = false;
+        });
+      }}
+    />
   {:else if route.page === "city"}
     <CityView key={route.params.key} {user} {editMode} />
   {:else if route.page === "accommodation"}
     <AccommodationView key={route.params.key} {user} {editMode} />
   {/if}
 </main>
+
+<style>
+  .main-content.presentation-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: auto;
+    background: var(--bg-primary, #f5f3ef);
+  }
+</style>

@@ -36,8 +36,8 @@ test.describe('City detail – public view', () => {
     await expect(page.locator('table tbody tr')).toHaveCount(4, { timeout: 10_000 });
   });
 
-  test('back link returns to home', async ({ page }) => {
-    await page.locator('a.back-link').click();
+  test('nav brand returns to home', async ({ page }) => {
+    await page.locator('.nav-brand').click();
     await expect(page).toHaveURL(/\/#?\/?$/);
   });
 });

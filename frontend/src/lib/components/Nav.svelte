@@ -5,12 +5,19 @@
   let {
     user,
     editMode,
+    isHomePage,
     ontoggleedit,
-  }: { user: AuthUser | null; editMode: boolean; ontoggleedit: () => void } =
-    $props();
+  }: {
+    user: AuthUser | null;
+    editMode: boolean;
+    isHomePage: boolean;
+    ontoggleedit: () => void;
+  } = $props();
 
   let scrollY = $state(0);
-  let navOpacity = $derived(Math.min(1, scrollY / 120));
+  let navOpacity = $derived(
+    isHomePage ? Math.min(1, scrollY / 120) : 1
+  );
 
   $effect(() => {
     const onScroll = () => {

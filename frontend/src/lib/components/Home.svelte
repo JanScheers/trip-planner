@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from "../api";
+  import { api, staticUrl } from "../api";
   import { getCityColor } from "../cityColors";
   import type { Day, City } from "../types";
   import { navigate } from "../router";
@@ -133,8 +133,9 @@
           Beijing to Hong Kong — a journey through 5,000 years of history
         </p>
       </div>
-      <div class="map-card card">
-        <ChinaMap
+      <div class="city-grid-fullwidth">
+        <div class="map-card card">
+          <ChinaMap
           {cities}
           {days}
           onCityClick={(key) => navigate(`/cities/${key}`)}
@@ -153,6 +154,7 @@
             </a>
           {/each}
         </div>
+        </div>
       </div>
     </section>
 
@@ -161,33 +163,30 @@
         <h2>Destinations</h2>
         <p class="section-desc">Seven cities, each with its own story</p>
       </div>
-      <div class="city-grid">
+      <div class="city-grid-fullwidth">
+        <div class="city-grid">
         {#each cities as city}
           <a
             href="#/cities/{city.key}"
             class="city-card"
             style="--city-color: {getCityColor(city.key, cities)};"
           >
-            <div class="city-card-accent"></div>
+            <div
+              class="city-card-image"
+              role="img"
+              aria-label="{city.name}"
+              style="background-image: url('{staticUrl(city.hero_image) ||
+              "https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=800&q=80"}');"
+            ></div>
+            <div class="city-card-overlay"></div>
             <div class="city-card-body">
-              <div class="city-card-top">
-                {#if city.emoji}
-                  <span class="city-emoji">{city.emoji}</span>
-                {:else}
-                  <span
-                    class="city-dot"
-                    style="background: {getCityColor(city.key, cities)};"
-                  ></span>
-                {/if}
-                <div>
-                  <h3 class="city-name">{city.name}</h3>
-                  {#if city.chinese_name}
-                    <span class="city-chinese chinese-text"
-                      >{city.chinese_name}</span
-                    >
-                  {/if}
-                </div>
-              </div>
+              {#if city.emoji}
+                <span class="city-emoji">{city.emoji}</span>
+              {/if}
+              <h3 class="city-name">{city.name}</h3>
+              {#if city.chinese_name}
+                <span class="city-chinese chinese-text">{city.chinese_name}</span>
+              {/if}
               <p class="city-desc">{city.tagline}</p>
               <div class="city-card-footer">
                 <span class="city-days-count"
@@ -198,6 +197,7 @@
             </div>
           </a>
         {/each}
+        </div>
       </div>
     </section>
 
@@ -513,7 +513,9 @@
 
   .map-card {
     padding: 0;
-    margin: 0 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
     overflow: hidden;
     background: linear-gradient(
       180deg,
@@ -524,88 +526,103 @@
   }
 
   /* --- City Grid --- */
+  .city-grid-fullwidth {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    padding-left: 40px;
+    padding-right: 40px;
+    box-sizing: border-box;
+  }
+
   .city-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 1000px;
+    margin: 0 auto;
   }
 
   .city-card {
     position: relative;
     display: block;
-    background: linear-gradient(180deg, #fff 0%, var(--bg-card-start) 100%);
-    border: 1px solid var(--border);
+    aspect-ratio: 16 / 9;
     border-radius: var(--radius-lg);
     overflow: hidden;
     text-decoration: none;
     color: inherit;
     transition: all 0.25s ease;
-    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
+    box-shadow: 0 4px 20px rgba(44, 42, 38, 0.12);
   }
 
   .city-card:hover {
-    border-color: var(--city-color);
-    transform: translateY(-3px);
-    box-shadow:
-      0 12px 32px rgba(44, 42, 38, 0.12),
-      0 0 0 1px var(--city-color);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(44, 42, 38, 0.18);
   }
 
-  .city-card-accent {
-    height: 4px;
+  .city-card-image {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: transform 0.4s ease;
+  }
+
+  .city-card:hover .city-card-image {
+    transform: scale(1.04);
+  }
+
+  .city-card-overlay {
+    position: absolute;
+    inset: 0;
     background: linear-gradient(
-      90deg,
-      var(--city-color) 0%,
-      color-mix(in srgb, var(--city-color) 80%, white) 100%
+      180deg,
+      transparent 20%,
+      rgba(44, 42, 38, 0.3) 50%,
+      rgba(44, 42, 38, 0.9) 100%
     );
-    opacity: 0.9;
     transition: opacity 0.25s;
   }
 
-  .city-card:hover .city-card-accent {
-    opacity: 1;
-  }
-
   .city-card-body {
-    padding: 20px;
-  }
-
-  .city-card-top {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    color: #fff;
   }
 
   .city-emoji {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1;
-  }
-
-  .city-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
+    display: block;
+    margin-bottom: 6px;
   }
 
   .city-name {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
     line-height: 1.2;
+    margin-bottom: 4px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   }
 
   .city-chinese {
-    font-size: 13px;
-    color: var(--text-muted);
+    font-size: 14px;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .city-desc {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     line-height: 1.5;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .city-card-footer {
@@ -616,20 +633,19 @@
 
   .city-days-count {
     font-size: 12px;
-    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    opacity: 0.9;
   }
 
   .city-arrow {
-    font-size: 14px;
-    color: var(--text-muted);
+    font-size: 16px;
+    opacity: 0.9;
     transition: all 0.2s;
   }
 
   .city-card:hover .city-arrow {
-    color: var(--city-color);
-    transform: translateX(3px);
+    transform: translateX(4px);
   }
 
   /* --- Timeline (merged into map card) --- */
