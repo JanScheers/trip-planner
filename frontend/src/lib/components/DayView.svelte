@@ -45,12 +45,12 @@
   });
 
   let dayIds = $derived(allDays.map((d) => d.id));
-  let dayIndex = $derived.by(() =>
-    day ? dayIds.indexOf(day.id) : -1,
-  );
+  let dayIndex = $derived.by(() => (day ? dayIds.indexOf(day.id) : -1));
   let prevId = $derived(dayIndex > 0 ? dayIds[dayIndex - 1] : undefined);
   let nextId = $derived(
-    dayIndex >= 0 && dayIndex < dayIds.length - 1 ? dayIds[dayIndex + 1] : undefined,
+    dayIndex >= 0 && dayIndex < dayIds.length - 1
+      ? dayIds[dayIndex + 1]
+      : undefined,
   );
   let cityMap = $derived(Object.fromEntries(cities.map((c) => [c.key, c])));
   let accMap = $derived(
@@ -107,7 +107,8 @@
       }
     };
     el.addEventListener("emoji-click", handler as EventListener);
-    return () => el.removeEventListener("emoji-click", handler as EventListener);
+    return () =>
+      el.removeEventListener("emoji-click", handler as EventListener);
   });
 
   function handleClickOutside(e: MouseEvent) {
@@ -187,7 +188,7 @@
               <option value="__add_city__">+ Add new city...</option>
             {/if}
           </select>
-            {#if canAdd}
+          {#if canAdd}
             <button
               type="button"
               class="btn-gold btn-sm add-city-btn"
@@ -289,7 +290,9 @@
                 class="tagline-input"
                 value={day.tagline || ""}
                 onchange={(e) =>
-                  updateField({ tagline: (e.target as HTMLInputElement).value })}
+                  updateField({
+                    tagline: (e.target as HTMLInputElement).value,
+                  })}
                 placeholder="Tagline"
               />
             {:else if day.tagline}
@@ -329,7 +332,7 @@
         </div>
         {#if day.accommodation_key || editMode}
           <div class="sleep-section">
-            <span class="sleep-subtitle">Sleep</span>
+            <span class="sleep-subtitle">Overnight</span>
             {#if editMode}
               <div class="sleep-select-wrap">
                 <select
@@ -368,8 +371,11 @@
                 {/if}
               </div>
             {:else if day.accommodation_key}
-              <a href="#/accommodations/{day.accommodation_key}" class="sleep-link"
-                >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
+              <a
+                href="#/accommodations/{day.accommodation_key}"
+                class="sleep-link"
+                >{accMap[day.accommodation_key]?.name ||
+                  day.accommodation_key}</a
               >
             {/if}
           </div>
@@ -758,7 +764,9 @@
     background: transparent;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+      background 0.2s,
+      border-color 0.2s;
   }
 
   .emoji-edit-trigger:hover {
@@ -847,7 +855,9 @@
     color: var(--text-primary);
     background: var(--bg-card);
     font-family: inherit;
-    transition: border-color var(--transition), box-shadow var(--transition);
+    transition:
+      border-color var(--transition),
+      box-shadow var(--transition);
   }
 
   .tagline-input::placeholder {
@@ -902,7 +912,9 @@
     color: var(--text-secondary);
     background: var(--bg-card);
     font-family: inherit;
-    transition: border-color var(--transition), box-shadow var(--transition);
+    transition:
+      border-color var(--transition),
+      box-shadow var(--transition);
   }
 
   .travel-input::placeholder {
@@ -920,11 +932,10 @@
   }
 
   .sleep-section {
-    padding: 20px 24px 24px;
+    padding: 12px 24px 24px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border-top: 1px solid var(--border);
   }
 
   .sleep-subtitle {
