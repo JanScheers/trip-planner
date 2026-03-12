@@ -41,24 +41,42 @@
     city = await api.cities.update(city.key, updates);
   }
 
-  async function addDay() {
-    if (cityDays.length === 0 || !city) return;
-    const lastCityDay = cityDays[cityDays.length - 1];
-    const nextDate = new Date(lastCityDay.date + 'T00:00:00');
-    nextDate.setDate(nextDate.getDate() + 1);
-    const insertionDate = nextDate.toISOString().slice(0, 10);
-    const newDay = await api.days.create({
-      date: insertionDate,
-      city_key: city.key,
-      accommodation_key: lastCityDay.accommodation_key,
-    });
-    const toShift = days.filter((d) => d.date >= insertionDate && d.id !== newDay.id);
+  async function shiftDaysFrom(insertionDate: string, excludeId: number) {
+    const toShift = days.filter((d) => d.date >= insertionDate && d.id !== excludeId);
     toShift.sort((a, b) => b.date.localeCompare(a.date));
     for (const d of toShift) {
       const dNext = new Date(d.date + 'T00:00:00');
       dNext.setDate(dNext.getDate() + 1);
       await api.days.update(d.id, { date: dNext.toISOString().slice(0, 10) });
     }
+  }
+
+  async function addDayAfter(day: Day) {
+    if (!city) return;
+    const nextDate = new Date(day.date + 'T00:00:00');
+    nextDate.setDate(nextDate.getDate() + 1);
+    const insertionDate = nextDate.toISOString().slice(0, 10);
+    const newDay = await api.days.create({
+      date: insertionDate,
+      city_key: city.key,
+      accommodation_key: day.accommodation_key,
+    });
+    await shiftDaysFrom(insertionDate, newDay.id);
+    await loadData(key);
+  }
+
+  async function addDayBefore(day: Day) {
+    if (!city) return;
+    const insertionDate = day.date;
+    const idx = cityDays.findIndex((d) => d.id === day.id);
+    const prevCityDay = idx > 0 ? cityDays[idx - 1] : null;
+    const accommodation_key = prevCityDay?.accommodation_key ?? day.accommodation_key;
+    const newDay = await api.days.create({
+      date: insertionDate,
+      city_key: city.key,
+      accommodation_key,
+    });
+    await shiftDaysFrom(insertionDate, newDay.id);
     await loadData(key);
   }
 
@@ -163,7 +181,7 @@
               class="clickable-row"
               style="--city-color: {getCityColor(city.key, cities)};"
               onclick={(e: MouseEvent) => {
-                if ((e.target as HTMLElement).closest('a')) return;
+                if ((e.target as HTMLElement).closest('a, button, .col-actions')) return;
                 navigate(`/days/${day.id}`);
               }}
             >
@@ -188,15 +206,17 @@
                   <div class="day-tagline">{day.tagline}</div>
                 {/if}
               </td>
+              {#if canEdit}
+                <td class="col-actions">
+                  <button type="button" class="btn-add-day" onclick={(e) => { e.stopPropagation(); addDayBefore(day); }}>Add before</button>
+                  <span class="actions-sep">·</span>
+                  <button type="button" class="btn-add-day" onclick={(e) => { e.stopPropagation(); addDayAfter(day); }}>Add after</button>
+                </td>
+              {/if}
             </tr>
           {/each}
         </tbody>
       </table>
-      {#if canEdit && cityDays.length > 0}
-        <div class="add-day-wrap">
-          <button class="btn-gold" onclick={addDay}>+ Add Day</button>
-        </div>
-      {/if}
     </div>
   </div>
 {:else}
@@ -243,24 +263,6 @@
 
   table {
     margin: 0;
-  }
-
-  th {
-    padding: 14px 16px;
-    background: linear-gradient(
-      180deg,
-      var(--bg-hover) 0%,
-      var(--bg-secondary) 100%
-    );
-    color: var(--gold-dim);
-  }
-
-  th:first-child {
-    border-radius: 0;
-  }
-
-  th:last-child {
-    border-radius: 0;
   }
 
   td {
@@ -329,7 +331,31 @@
     margin-top: 2px;
   }
 
-  .add-day-wrap {
-    padding: 16px 24px 24px;
+  .col-actions {
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 16px;
+    vertical-align: middle;
+  }
+
+  .btn-add-day {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-add-day:hover {
+    color: var(--gold);
+    text-decoration: underline;
+  }
+
+  .actions-sep {
+    color: var(--border);
+    margin: 0 6px;
+    font-size: 12px;
   }
 </style>

@@ -3,6 +3,7 @@
   import { api } from "./lib/api";
   import type { AuthUser } from "./lib/types";
   import Nav from "./lib/components/Nav.svelte";
+  import DayNavBar from "./lib/components/DayNavBar.svelte";
   import Home from "./lib/components/Home.svelte";
   import BasicView from "./lib/components/BasicView.svelte";
   import DayView from "./lib/components/DayView.svelte";
@@ -59,14 +60,21 @@
 </script>
 
 {#if !presentationMode}
-  <Nav
-    {user}
-    {editMode}
-    isHomePage={route.page === "home"}
-    ontoggleedit={() => {
-      editMode = !editMode;
-    }}
-  />
+  <header class="app-header">
+    <Nav
+      {user}
+      {editMode}
+      isHomePage={route.page === "home"}
+      ontoggleedit={() => {
+        editMode = !editMode;
+      }}
+    />
+    {#if route.page === "basic" || route.page === "day"}
+      <DayNavBar
+        currentDayId={route.page === "day" ? Number(route.params.id) : null}
+      />
+    {/if}
+  </header>
 {/if}
 
 <main
@@ -74,8 +82,10 @@
   class="main-content"
   class:container={route.page !== "home" && route.page !== "day"}
   class:day-page={route.page === "day" && !presentationMode}
+  class:with-nav={!presentationMode && route.page !== "home"}
+  class:with-day-bar={!presentationMode && (route.page === "basic" || route.page === "day")}
   class:presentation-fullscreen={presentationMode && route.page === "day"}
-  style="padding-top: {presentationMode ? 0 : route.page === 'home' ? 0 : 72}px; padding-bottom: {presentationMode ? 0 : 48}px;"
+  style="{(presentationMode || route.page === 'home' ? 'padding-top: 0px;' : '')} padding-bottom: {presentationMode ? 0 : 48}px;"
 >
   {#if route.page === "home"}
     <Home />
@@ -111,6 +121,30 @@
 </main>
 
 <style>
+  .app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-content.with-nav {
+    padding-top: 72px;
+  }
+
+  .main-content.with-day-bar {
+    padding-top: 116px;
+  }
+
+  @media (max-width: 640px) {
+    .main-content.with-day-bar {
+      padding-top: 108px;
+    }
+  }
+
   .main-content.day-page {
     background: var(--bg-primary, #f5f3ef);
   }
