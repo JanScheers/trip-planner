@@ -11,6 +11,7 @@ backend/target/
 node_modules/
 dist/
 dist-ssr/
+frontend/test-results/
 
 # Uploaded files
 backend/static/

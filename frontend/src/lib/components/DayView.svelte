@@ -4,6 +4,8 @@
   import { formatDateLong, isTypingElement } from "../format";
   import { navigate } from "../router";
   import type { Day, City, Accommodation, AuthUser, UpdateDay } from "../types";
+  import AddAccommodationModal from "./AddAccommodationModal.svelte";
+  import AddCityModal from "./AddCityModal.svelte";
   import ImageUpload from "./ImageUpload.svelte";
   import MarkdownEditor from "./MarkdownEditor.svelte";
 
@@ -28,6 +30,19 @@
   let showEmojiPicker = $state(false);
   let pickerEl: HTMLElement | null = $state(null);
   let emojiContainerEl: HTMLElement | null = $state(null);
+  let showAddCityModal = $state(false);
+  let showAddAccModal = $state(false);
+
+  let canAdd = $derived(editMode && user?.is_editor);
+  let citySelectValue = $state("");
+  let accSelectValue = $state("");
+
+  $effect(() => {
+    if (day) {
+      citySelectValue = day.city_key;
+      accSelectValue = day.accommodation_key ?? "";
+    }
+  });
 
   let dayIds = $derived(allDays.map((d) => d.id));
   let dayIndex = $derived.by(() =>
@@ -107,6 +122,16 @@
       return () => document.removeEventListener("click", handleClickOutside);
     }
   });
+
+  async function handleCityAdded(city: City) {
+    await updateField({ city_key: city.key });
+    cities = await api.cities.list();
+  }
+
+  async function handleAccommodationAdded(acc: Accommodation) {
+    await updateField({ accommodation_key: acc.key });
+    accommodations = await api.accommodations.list();
+  }
 </script>
 
 {#if day}
@@ -138,25 +163,54 @@
       {/if}
       {formatDateLong(d.date)}
     </h1>
-    <p class="day-hero-subtext" class:edit={editable}>
+    <div class="day-hero-subtext" class:edit={editable}>
       {#if editable}
-        <select
-          class="inline-select"
-          aria-label="City"
-          value={d.city_key}
-          onchange={(e) =>
-            updateField({ city_key: (e.target as HTMLSelectElement).value })}
-        >
-          {#each cities as city}
-            <option value={city.key}>{city.name}</option>
-          {/each}
-        </select>
+        <span class="inline-select-wrap">
+          <select
+            class="inline-select"
+            aria-label="City"
+            bind:value={citySelectValue}
+            onchange={(e) => {
+              const v = (e.target as HTMLSelectElement).value;
+              if (v === "__add_city__") {
+                showAddCityModal = true;
+                citySelectValue = day!.city_key;
+              } else {
+                updateField({ city_key: v });
+              }
+            }}
+          >
+            {#each cities as city}
+              <option value={city.key}>{city.name}</option>
+            {/each}
+            {#if canAdd}
+              <option value="__add_city__">+ Add new city...</option>
+            {/if}
+          </select>
+            {#if canAdd}
+            <button
+              type="button"
+              class="btn-gold btn-sm add-city-btn"
+              onclick={() => (showAddCityModal = true)}
+              aria-label="Add city"
+            >
+              + Add city
+            </button>
+          {/if}
+        </span>
       {:else}
-        <a href="#/cities/{d.city_key}"
-          >{cityMap[d.city_key]?.name || d.city_key}</a
-        >
+        <div class="day-hero-city">
+          <a href="#/cities/{d.city_key}" class="day-hero-city-link">
+            {cityMap[d.city_key]?.name || d.city_key}
+          </a>
+          {#if cityMap[d.city_key]?.chinese_name}
+            <span class="day-hero-city-chinese chinese-text">
+              {cityMap[d.city_key].chinese_name}
+            </span>
+          {/if}
+        </div>
       {/if}
-    </p>
+    </div>
   {/snippet}
 
   <div
@@ -277,21 +331,42 @@
           <div class="sleep-section">
             <span class="sleep-subtitle">Sleep</span>
             {#if editMode}
-              <select
-                class="sleep-select"
-                aria-label="Sleep"
-                value={day.accommodation_key || ""}
-                onchange={(e) =>
-                  updateField({
-                    accommodation_key:
-                      (e.target as HTMLSelectElement).value || null,
-                  })}
-              >
-                <option value="">— None —</option>
-                {#each accommodations as acc}
-                  <option value={acc.key}>{acc.name}</option>
-                {/each}
-              </select>
+              <div class="sleep-select-wrap">
+                <select
+                  class="sleep-select"
+                  aria-label="Sleep"
+                  bind:value={accSelectValue}
+                  onchange={(e) => {
+                    const v = (e.target as HTMLSelectElement).value;
+                    if (v === "__add_acc__") {
+                      showAddAccModal = true;
+                      accSelectValue = day!.accommodation_key ?? "";
+                    } else {
+                      updateField({
+                        accommodation_key: v || null,
+                      });
+                    }
+                  }}
+                >
+                  <option value="">— None —</option>
+                  {#each accommodations as acc}
+                    <option value={acc.key}>{acc.name}</option>
+                  {/each}
+                  {#if canAdd}
+                    <option value="__add_acc__">+ Add new stay...</option>
+                  {/if}
+                </select>
+                {#if canAdd}
+                  <button
+                    type="button"
+                    class="btn-gold btn-sm"
+                    onclick={() => (showAddAccModal = true)}
+                    aria-label="Add stay"
+                  >
+                    + Add stay
+                  </button>
+                {/if}
+              </div>
             {:else if day.accommodation_key}
               <a href="#/accommodations/{day.accommodation_key}" class="sleep-link"
                 >{accMap[day.accommodation_key]?.name || day.accommodation_key}</a
@@ -305,6 +380,17 @@
 {:else}
   <p>Loading...</p>
 {/if}
+
+<AddCityModal
+  open={showAddCityModal}
+  onClose={() => (showAddCityModal = false)}
+  onSuccess={handleCityAdded}
+/>
+<AddAccommodationModal
+  open={showAddAccModal}
+  onClose={() => (showAddAccModal = false)}
+  onSuccess={handleAccommodationAdded}
+/>
 
 <style>
   .day-slideshow {
@@ -458,11 +544,11 @@
     color: var(--text-primary);
   }
 
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext a {
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-city-link {
     color: var(--gold);
   }
 
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext a:hover {
+  .day-hero.has-placeholder .day-hero-title-strip .day-hero-city-link:hover {
     color: var(--gold-light);
   }
 
@@ -489,11 +575,7 @@
     );
     backdrop-filter: blur(24px) saturate(150%);
     -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-top: 1px solid rgba(255, 255, 255, 0.9);
-    box-shadow:
-      0 4px 24px rgba(44, 42, 38, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.12);
   }
 
   .day-hero.has-image .day-hero-title-strip .day-hero-title {
@@ -502,14 +584,18 @@
     text-shadow: none;
   }
 
-  .day-hero.has-image .day-hero-title-strip .day-hero-subtext,
-  .day-hero.has-image .day-hero-title-strip .day-hero-subtext a {
+  .day-hero.has-image .day-hero-title-strip .day-hero-subtext {
     color: var(--text-secondary);
-    font-weight: 600;
     text-shadow: none;
   }
 
-  .day-hero.has-image .day-hero-title-strip .day-hero-subtext a:hover {
+  .day-hero.has-image .day-hero-title-strip .day-hero-city-link {
+    color: var(--text-primary);
+    font-weight: 700;
+    text-shadow: none;
+  }
+
+  .day-hero.has-image .day-hero-title-strip .day-hero-city-link:hover {
     color: var(--gold);
   }
 
@@ -546,12 +632,25 @@
     gap: 0 6px;
   }
 
-  .day-hero-subtext a {
+  .day-hero-city {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .day-hero-city-link {
+    font-size: 22px;
+    font-weight: 700;
     text-decoration: none;
   }
 
-  .day-hero-subtext a:hover {
+  .day-hero-city-link:hover {
     text-decoration: underline;
+  }
+
+  .day-hero-city-chinese {
+    font-size: 18px;
+    color: var(--text-secondary);
   }
 
   .hero-placeholder-emoji {
@@ -589,7 +688,6 @@
     box-shadow:
       0 2px 4px rgba(0, 0, 0, 0.04),
       0 8px 32px rgba(44, 42, 38, 0.1);
-    border: 1px solid var(--border);
   }
 
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
@@ -604,10 +702,7 @@
       -webkit-backdrop-filter: blur(24px) saturate(150%);
       box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.04),
-        0 8px 32px rgba(44, 42, 38, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-top: 1px solid rgba(255, 255, 255, 0.9);
+        0 8px 32px rgba(44, 42, 38, 0.1);
     }
   }
 
@@ -709,6 +804,25 @@
     border-color: var(--border-gold);
   }
 
+  .inline-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .inline-select-wrap .add-city-btn {
+    margin-left: auto;
+  }
+
+  .sleep-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
   .tagline-row {
     padding: 20px 24px 12px;
     margin-bottom: 0;
@@ -724,11 +838,32 @@
 
   .tagline-input {
     width: 100%;
-    padding: 6px 0;
+    padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 16px;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--text-primary);
     background: var(--bg-card);
+    font-family: inherit;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .tagline-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  .tagline-input:hover {
+    border-color: var(--border-gold);
+  }
+
+  .tagline-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px var(--gold-glow);
   }
 
   .travel-section {
@@ -760,11 +895,28 @@
 
   .travel-input {
     width: 100%;
-    padding: 6px 0;
+    padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 14px;
+    color: var(--text-secondary);
     background: var(--bg-card);
+    font-family: inherit;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .travel-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .travel-input:hover {
+    border-color: var(--border-gold);
+  }
+
+  .travel-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px var(--gold-glow);
   }
 
   .sleep-section {
@@ -813,14 +965,14 @@
   }
 
   .sleep-link {
-    font-size: 13px;
-    color: var(--gold);
+    font-size: 15px;
+    color: var(--text-primary);
     text-decoration: none;
   }
 
   .sleep-link:hover {
     text-decoration: underline;
-    color: var(--gold-light);
+    color: var(--gold);
   }
 
   .sr-only {
@@ -851,6 +1003,14 @@
 
     .day-hero-title {
       font-size: 26px;
+    }
+
+    .day-hero-city-link {
+      font-size: 18px;
+    }
+
+    .day-hero-city-chinese {
+      font-size: 16px;
     }
 
     .slide-content {
