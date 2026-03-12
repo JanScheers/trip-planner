@@ -479,27 +479,31 @@
     font-size: 24px;
     font-weight: 700;
     color: #fff;
+    -webkit-text-stroke: 2px rgba(138, 109, 10, 0.9);
+    paint-order: stroke fill;
     text-shadow:
-      0 0 3px rgba(138, 109, 10, 0.8),
-      0 0 6px rgba(138, 109, 10, 0.5),
-      0 1px 2px rgba(44, 42, 38, 0.4);
+      0 0 4px rgba(138, 109, 10, 0.6),
+      0 0 8px rgba(138, 109, 10, 0.4);
   }
 
   .stat-label {
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: #fff;
+    -webkit-text-stroke: 2px rgba(138, 109, 10, 0.9);
+    paint-order: stroke fill;
     text-shadow:
-      0 0 3px rgba(138, 109, 10, 0.8),
-      0 0 6px rgba(138, 109, 10, 0.5),
-      0 1px 2px rgba(44, 42, 38, 0.4);
+      0 0 4px rgba(138, 109, 10, 0.6),
+      0 0 8px rgba(138, 109, 10, 0.4);
   }
 
   .stat-divider {
-    width: 1px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.6);
+    width: 3px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 2px;
   }
 
   /* --- Sections --- */

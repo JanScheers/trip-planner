@@ -66,4 +66,11 @@ test.describe('City detail – editor view', () => {
       await expect(page.locator('h1')).toContainText("Xi'an", { timeout: 10_000 });
     }
   });
+
+  test('shows Add Day button in Days section when city has days', async ({ page }) => {
+    await page.goto('/#/cities/beijing');
+    await expect(page.locator('h1')).toContainText('Beijing', { timeout: 10_000 });
+    await expect(page.locator('h3', { hasText: 'Days in Beijing' })).toBeVisible();
+    await expect(page.locator('button.btn-gold', { hasText: '+ Add Day' })).toBeVisible();
+  });
 });

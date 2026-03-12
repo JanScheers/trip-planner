@@ -73,6 +73,7 @@
   bind:this={mainEl}
   class="main-content"
   class:container={route.page !== "home" && route.page !== "day"}
+  class:day-page={route.page === "day" && !presentationMode}
   class:presentation-fullscreen={presentationMode && route.page === "day"}
   style="padding-top: {presentationMode ? 0 : route.page === 'home' ? 0 : 72}px; padding-bottom: {presentationMode ? 0 : 48}px;"
 >
@@ -110,6 +111,10 @@
 </main>
 
 <style>
+  .main-content.day-page {
+    background: var(--bg-primary, #f5f3ef);
+  }
+
   .main-content.presentation-fullscreen {
     position: fixed;
     inset: 0;

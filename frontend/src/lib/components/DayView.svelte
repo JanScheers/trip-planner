@@ -307,17 +307,14 @@
 <style>
   .day-slideshow {
     position: relative;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
     overflow: hidden;
-    background: var(--bg-card);
+    background: transparent;
     min-height: calc(100vh - 56px);
   }
 
   .day-slideshow.presentation-mode {
     min-height: 100vh;
-    background: var(--bg-page, #fafaf9);
+    background: transparent;
   }
 
   .slide-controls {

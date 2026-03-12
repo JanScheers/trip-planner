@@ -151,24 +151,52 @@
       />
     </div>
 
-    <div class="card">
-      <h3 class="section-title">Days in {city.name} ({cityDays.length})</h3>
+    <div class="card table-card">
+      <div class="table-card-header">
+        <h3 class="section-title">Days in {city.name} ({cityDays.length})</h3>
+      </div>
       <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Emoji</th>
-          </tr>
-        </thead>
         <tbody>
           {#each cityDays as day}
-            <tr>
-              <td><a href="#/days/{day.id}">{formatDate(day.date)}</a></td>
-              <td>{day.emoji || ''}</td>
+            {@const thumb = dayThumbUrl(day)}
+            <tr
+              class="clickable-row"
+              style="--city-color: {getCityColor(city.key, cities)};"
+              onclick={(e: MouseEvent) => {
+                if ((e.target as HTMLElement).closest('a')) return;
+                navigate(`/days/${day.id}`);
+              }}
+            >
+              <td class="col-thumb">
+                {#if thumb}
+                  <img
+                    src={staticUrl(thumb)}
+                    alt=""
+                    class="day-row-thumb"
+                    loading="lazy"
+                  />
+                {:else}
+                  <span class="day-row-thumb-placeholder">{day.emoji || '📅'}</span>
+                {/if}
+              </td>
+              <td class="col-emoji">
+                {#if day.emoji}<span>{day.emoji}</span>{:else}<span class="day-num">—</span>{/if}
+              </td>
+              <td>
+                <a href="#/days/{day.id}" class="date-text">{formatDate(day.date)}</a>
+                {#if day.tagline}
+                  <div class="day-tagline">{day.tagline}</div>
+                {/if}
+              </td>
             </tr>
           {/each}
         </tbody>
       </table>
+      {#if canEdit && cityDays.length > 0}
+        <div class="add-day-wrap">
+          <button class="btn-gold" onclick={addDay}>+ Add Day</button>
+        </div>
+      {/if}
     </div>
   </div>
 {:else}
@@ -199,6 +227,109 @@
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+  }
+
+  .table-card {
+    overflow-x: auto;
+    padding: 0;
+    background: var(--gradient-card) !important;
+    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
+  }
+
+  .table-card-header {
+    padding: 24px 24px 12px;
+  }
+
+  table {
+    margin: 0;
+  }
+
+  th {
+    padding: 14px 16px;
+    background: linear-gradient(
+      180deg,
+      var(--bg-hover) 0%,
+      var(--bg-secondary) 100%
+    );
+    color: var(--gold-dim);
+  }
+
+  th:first-child {
+    border-radius: 0;
+  }
+
+  th:last-child {
+    border-radius: 0;
+  }
+
+  td {
+    padding: 12px 16px;
+  }
+
+  .col-thumb {
+    width: 48px;
+    padding: 8px 12px;
+    vertical-align: middle;
+  }
+
+  .day-row-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    display: block;
+    border: 1px solid var(--border);
+  }
+
+  .day-row-thumb-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--gold-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .col-emoji {
+    width: 40px;
+    text-align: center;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    background: color-mix(in srgb, var(--city-color) 8%, var(--bg-card));
+    transition: background 0.15s ease;
+  }
+
+  .clickable-row:hover {
+    background: color-mix(in srgb, var(--city-color) 18%, var(--bg-card));
+  }
+
+  .clickable-row:hover :global(td) {
+    background: transparent;
+  }
+
+  .day-num {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .date-text {
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .day-tagline {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .add-day-wrap {
+    padding: 16px 24px 24px;
   }
 </style>
