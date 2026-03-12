@@ -1,5 +1,7 @@
 <script lang="ts">
   import { api, staticUrl } from '../api';
+  import { getCityColor } from '../cityColors';
+  import { navigate } from '../router';
   import type { City, Day, AuthUser } from '../types';
   import ImageUpload from './ImageUpload.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -8,9 +10,15 @@
 
   let city: City | null = $state(null);
   let days: Day[] = $state([]);
+  let cities: City[] = $state([]);
 
   let canEdit = $derived(editMode);
   let cityDays = $derived(days.filter(d => d.city_key === key));
+  let cityMap = $derived(Object.fromEntries(cities.map((c) => [c.key, c])));
+
+  function dayThumbUrl(day: Day): string | null {
+    return day.hero_image || cityMap[day.city_key]?.hero_image || null;
+  }
 
   $effect(() => {
     const cityKey = key;
@@ -18,15 +26,40 @@
   });
 
   async function loadData(cityKey: string) {
-    [city, days] = await Promise.all([
+    const [cityData, daysData, citiesData] = await Promise.all([
       api.cities.get(cityKey),
       api.days.list(),
+      api.cities.list(),
     ]);
+    city = cityData;
+    days = daysData;
+    cities = citiesData;
   }
 
   async function updateField(updates: Record<string, any>) {
     if (!city) return;
     city = await api.cities.update(city.key, updates);
+  }
+
+  async function addDay() {
+    if (cityDays.length === 0 || !city) return;
+    const lastCityDay = cityDays[cityDays.length - 1];
+    const nextDate = new Date(lastCityDay.date + 'T00:00:00');
+    nextDate.setDate(nextDate.getDate() + 1);
+    const insertionDate = nextDate.toISOString().slice(0, 10);
+    const newDay = await api.days.create({
+      date: insertionDate,
+      city_key: city.key,
+      accommodation_key: lastCityDay.accommodation_key,
+    });
+    const toShift = days.filter((d) => d.date >= insertionDate && d.id !== newDay.id);
+    toShift.sort((a, b) => b.date.localeCompare(a.date));
+    for (const d of toShift) {
+      const dNext = new Date(d.date + 'T00:00:00');
+      dNext.setDate(dNext.getDate() + 1);
+      await api.days.update(d.id, { date: dNext.toISOString().slice(0, 10) });
+    }
+    await loadData(key);
   }
 
   function formatDate(dateStr: string): string {

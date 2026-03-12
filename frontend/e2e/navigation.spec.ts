@@ -20,6 +20,13 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL('/#/cities');
   });
 
+  test('Accommodations nav link routes to #/accommodations', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('nav a[href="#/accommodations"]').click();
+    await expect(page).toHaveURL('/#/accommodations');
+    await expect(page.locator('.acc-list-link')).toHaveCount(7, { timeout: 10_000 });
+  });
+
   test('clicking a city card navigates to city detail', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.city-card')).toHaveCount(7, { timeout: 10_000 });

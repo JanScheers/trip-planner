@@ -12,6 +12,7 @@ export function parseHash(): Route {
   if (parts[0] === 'days' && parts.length === 2) return { page: 'day', params: { id: parts[1] } };
   if (parts[0] === 'cities' && parts.length === 1) return { page: 'cities', params: {} };
   if (parts[0] === 'cities' && parts.length === 2) return { page: 'city', params: { key: parts[1] } };
+  if (parts[0] === 'accommodations' && parts.length === 1) return { page: 'accommodations', params: {} };
   if (parts[0] === 'accommodations' && parts.length === 2) return { page: 'accommodation', params: { key: parts[1] } };
   return { page: 'home', params: {} };
 }

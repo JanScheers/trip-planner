@@ -41,6 +41,11 @@ describe('parseHash', () => {
     expect(parseHash()).toEqual({ page: 'city', params: { key: 'beijing' } });
   });
 
+  it('returns accommodations list for #/accommodations', () => {
+    setHash('#/accommodations');
+    expect(parseHash()).toEqual({ page: 'accommodations', params: {} });
+  });
+
   it('returns accommodation with key for #/accommodations/hotel-a', () => {
     setHash('#/accommodations/hotel-a');
     expect(parseHash()).toEqual({ page: 'accommodation', params: { key: 'hotel-a' } });

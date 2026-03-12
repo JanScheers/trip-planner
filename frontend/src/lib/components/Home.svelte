@@ -176,7 +176,7 @@
               role="img"
               aria-label="{city.name}"
               style="background-image: url('{staticUrl(city.hero_image) ||
-              "https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=800&q=80"}');"
+              "https://images.unsplash.com/photo-1751688472649-ed13c46ccfe1?auto=format&fit=crop&w=800&q=80"}');"
             ></div>
             <div class="city-card-overlay"></div>
             <div class="city-card-body">
@@ -227,7 +227,7 @@
     text-align: center;
     padding: 0 0 48px;
     overflow: hidden;
-    min-height: 420px;
+    min-height: 100vh;
   }
 
   .hero-bg {
@@ -239,7 +239,7 @@
   .hero-bg-image {
     position: absolute;
     inset: 0;
-    background-image: url("https://images.unsplash.com/photo-1508807526341-4c4c007e1a0d?auto=format&fit=crop&w=1920&q=80");
+    background-image: url("https://images.unsplash.com/photo-1751688472649-ed13c46ccfe1?auto=format&fit=crop&w=1920&q=80");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -251,8 +251,10 @@
     background: linear-gradient(
       180deg,
       rgba(44, 42, 38, 0.5) 0%,
-      rgba(44, 42, 38, 0.35) 40%,
-      rgba(245, 243, 239, 0.85) 100%
+      rgba(44, 42, 38, 0.35) 25%,
+      rgba(44, 42, 38, 0.15) 50%,
+      rgba(245, 243, 239, 0.4) 75%,
+      rgba(245, 243, 239, 0.92) 100%
     );
   }
 
@@ -372,10 +374,14 @@
 
   .hero-subtitle {
     font-size: 15px;
-    color: var(--text-secondary);
+    color: #fff;
     font-weight: 400;
     letter-spacing: 0.2em;
     text-transform: uppercase;
+    text-shadow:
+      0 0 3px rgba(138, 109, 10, 0.8),
+      0 0 6px rgba(138, 109, 10, 0.5),
+      0 1px 2px rgba(44, 42, 38, 0.4);
   }
 
   /* --- Countdown --- */
@@ -387,8 +393,12 @@
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--text-muted);
+    color: #fff;
     margin-bottom: 14px;
+    text-shadow:
+      0 0 3px rgba(138, 109, 10, 0.8),
+      0 0 6px rgba(138, 109, 10, 0.5),
+      0 1px 2px rgba(44, 42, 38, 0.4);
   }
 
   .live-pulse {
@@ -468,20 +478,28 @@
   .stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #fff;
+    text-shadow:
+      0 0 3px rgba(138, 109, 10, 0.8),
+      0 0 6px rgba(138, 109, 10, 0.5),
+      0 1px 2px rgba(44, 42, 38, 0.4);
   }
 
   .stat-label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--text-muted);
+    color: #fff;
+    text-shadow:
+      0 0 3px rgba(138, 109, 10, 0.8),
+      0 0 6px rgba(138, 109, 10, 0.5),
+      0 1px 2px rgba(44, 42, 38, 0.4);
   }
 
   .stat-divider {
     width: 1px;
     height: 32px;
-    background: var(--border);
+    background: rgba(255, 255, 255, 0.6);
   }
 
   /* --- Sections --- */

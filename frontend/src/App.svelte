@@ -8,6 +8,7 @@
   import DayView from "./lib/components/DayView.svelte";
   import CitiesView from "./lib/components/CitiesView.svelte";
   import CityView from "./lib/components/CityView.svelte";
+  import AccommodationsView from "./lib/components/AccommodationsView.svelte";
   import AccommodationView from "./lib/components/AccommodationView.svelte";
 
   let route: Route = $state(parseHash());
@@ -81,6 +82,8 @@
     <BasicView {user} {editMode} />
   {:else if route.page === "cities"}
     <CitiesView />
+  {:else if route.page === "accommodations"}
+    <AccommodationsView />
   {:else if route.page === "day"}
     <DayView
       id={Number(route.params.id)}

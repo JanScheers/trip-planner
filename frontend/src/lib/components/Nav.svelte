@@ -44,6 +44,7 @@
       <div class="nav-links">
         <a href="#/days" class="nav-link">Itinerary</a>
         <a href="#/cities" class="nav-link">Cities</a>
+        <a href="#/accommodations" class="nav-link">Accommodations</a>
       </div>
     </div>
     <div class="nav-right">
