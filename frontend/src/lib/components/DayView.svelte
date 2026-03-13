@@ -254,9 +254,6 @@
       {#if !displayHeroImage}
         <span class="hero-placeholder-emoji">{day.emoji || "📅"}</span>
       {/if}
-      {#if displayHeroImage}
-        <div class="day-hero-overlay" aria-hidden="true"></div>
-      {/if}
       <div class="day-city-display">
         {#if cityMap[day.city_key]?.chinese_name}
           <span class="day-city-chinese chinese-text">
@@ -500,18 +497,6 @@
       135deg,
       var(--gold-glow) 0%,
       color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%
-    );
-  }
-
-  .day-hero-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(
-      180deg,
-      rgba(44, 42, 38, 0.5) 0%,
-      rgba(44, 42, 38, 0.25) 40%,
-      transparent 70%
     );
   }
 
