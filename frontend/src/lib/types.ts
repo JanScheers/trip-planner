@@ -67,6 +67,11 @@ export interface Accommodation {
   hero_image: string | null;
 }
 
+export interface Tips {
+  key: string;
+  content: string;
+}
+
 export interface CreateAccommodation {
   name: string;
 }
@@ -88,4 +93,24 @@ export interface AuthUser {
 
 export interface UploadResponse {
   url: string;
+}
+
+export interface ChecklistItem {
+  id: number;
+  label: string;
+  sort_order: number;
+}
+
+export interface ChecklistEditor {
+  email: string;
+}
+
+export interface CreateChecklistItem {
+  label: string;
+  sort_order?: number;
+}
+
+export interface UpdateChecklistItem {
+  label?: string;
+  sort_order?: number;
 }

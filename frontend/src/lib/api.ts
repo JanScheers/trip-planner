@@ -2,7 +2,9 @@ import type {
   Day, CreateDay, UpdateDay,
   City, CreateCity, UpdateCity,
   Accommodation, CreateAccommodation, UpdateAccommodation,
-  AuthUser, UploadResponse
+  Tips,
+  AuthUser, UploadResponse,
+  ChecklistItem, ChecklistEditor, CreateChecklistItem, UpdateChecklistItem
 } from './types';
 
 /** API base URL. Empty string in dev uses Vite proxy; set VITE_API_ORIGIN for production. */
@@ -69,6 +71,10 @@ export const api = {
     update: (key: string, data: UpdateAccommodation) => request<Accommodation>(`/api/accommodations/${key}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (key: string) => request<string>(`/api/accommodations/${key}`, { method: 'DELETE' }),
   },
+  tips: {
+    get: () => request<Tips>('/api/tips'),
+    update: (content: string) => request<Tips>('/api/tips', { method: 'PUT', body: JSON.stringify({ content }) }),
+  },
   upload: async (file: File): Promise<UploadResponse> => {
     const form = new FormData();
     form.append('file', file);
@@ -77,4 +83,19 @@ export const api = {
     return res.json();
   },
   exportUrl: `${BASE}/api/export`,
+  checklist: {
+    editors: () => request<ChecklistEditor[]>('/api/checklist/editors'),
+    items: () => request<ChecklistItem[]>('/api/checklist/items'),
+    createItem: (data: CreateChecklistItem) =>
+      request<ChecklistItem>('/api/checklist/items', { method: 'POST', body: JSON.stringify(data) }),
+    updateItem: (id: number, data: UpdateChecklistItem) =>
+      request<ChecklistItem>(`/api/checklist/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteItem: (id: number) => request<string>(`/api/checklist/items/${id}`, { method: 'DELETE' }),
+    checks: () => request<Record<string, boolean>>('/api/checklist/checks'),
+    toggleCheck: (itemId: number, checked: boolean) =>
+      request<{ item_id: number; editor_email: string; checked: boolean }>(
+        '/api/checklist/checks',
+        { method: 'PUT', body: JSON.stringify({ item_id: itemId, checked }) }
+      ),
+  },
 };

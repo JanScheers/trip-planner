@@ -101,6 +101,19 @@ pub struct UpdateAccommodation {
     pub hero_image: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, TS)]
+#[ts(export)]
+pub struct Tips {
+    pub key: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct UpdateTips {
+    pub content: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UploadResponse {
@@ -121,4 +134,39 @@ pub struct AuthState {
     pub email: String,
     pub name: String,
     pub picture: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow, TS)]
+#[ts(export)]
+pub struct ChecklistItem {
+    pub id: i64,
+    pub label: String,
+    pub sort_order: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct CreateChecklistItem {
+    pub label: String,
+    pub sort_order: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct UpdateChecklistItem {
+    pub label: Option<String>,
+    pub sort_order: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ChecklistEditor {
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ToggleCheckBody {
+    pub item_id: i64,
+    pub checked: bool,
 }

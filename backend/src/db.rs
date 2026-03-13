@@ -29,6 +29,8 @@ pub async fn seed_from_dir(pool: &SqlitePool, seed_dir: &str) {
     seed_cities(pool, &format!("{}/cities.tsv", seed_dir)).await;
     seed_accommodations(pool, &format!("{}/accommodations.tsv", seed_dir)).await;
     seed_days(pool, &format!("{}/days.tsv", seed_dir)).await;
+    seed_checklist_items(pool, &format!("{}/checklist_items.tsv", seed_dir)).await;
+    seed_tips(pool, &format!("{}/tips.md", seed_dir)).await;
     println!("Seeded database from {}", seed_dir);
 }
 
@@ -138,6 +140,48 @@ async fn seed_days(pool: &SqlitePool, path: &str) {
     }
 }
 
+async fn seed_tips(pool: &SqlitePool, path: &str) {
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    sqlx::query("INSERT OR IGNORE INTO tips (key, content) VALUES ('main', ?)")
+        .bind(&content)
+        .execute(pool)
+        .await
+        .expect("Failed to insert tips");
+}
+
+async fn seed_checklist_items(pool: &SqlitePool, path: &str) {
+    let Ok(content) = std::fs::read_to_string(path) else {
+        return;
+    };
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_reader(content.as_bytes());
+
+    // columns: label, sort_order
+    for result in reader.records() {
+        let record = match result {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        let label = record.get(0).unwrap_or("").to_string();
+        let sort_order: i64 = record.get(1).and_then(|v| v.parse().ok()).unwrap_or(0);
+
+        if label.is_empty() {
+            continue;
+        }
+
+        sqlx::query("INSERT INTO checklist_items (label, sort_order) VALUES (?, ?)")
+        .bind(&label)
+        .bind(sort_order)
+        .execute(pool)
+        .await
+        .expect("Failed to insert checklist item");
+    }
+}
+
 pub async fn export_tsv(pool: &SqlitePool) -> String {
     let days: Vec<Day> = sqlx::query_as("SELECT * FROM days ORDER BY date")
         .fetch_all(pool)
@@ -199,6 +243,20 @@ mod tests {
         writeln!(f, "date\tcity_key\taccommodation_key\temoji\tnotes\ttagline\ttravel\thero_image").unwrap();
         for (date, city_key, acc_key) in rows {
             writeln!(f, "{}\t{}\t{}\t\t\t\t\t", date, city_key, acc_key).unwrap();
+        }
+    }
+
+    fn write_tips(dir: &tempfile::TempDir, content: &str) {
+        let path = dir.path().join("tips.md");
+        std::fs::write(&path, content).unwrap();
+    }
+
+    fn write_checklist_items(dir: &tempfile::TempDir, rows: &[(&str, i64)]) {
+        let path = dir.path().join("checklist_items.tsv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "label\tsort_order").unwrap();
+        for (label, sort_order) in rows {
+            writeln!(f, "{}\t{}", label, sort_order).unwrap();
         }
     }
 
@@ -352,6 +410,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn seed_from_dir_inserts_checklist_items() {
+        let pool = test_pool().await;
+        let dir = make_seed_dir();
+
+        write_cities(&dir, &[("beijing", "Beijing", "北京")]);
+        write_accommodations(&dir, &[("hotel-a", "Hotel A")]);
+        write_days(&dir, &[("2026-10-01", "beijing", "hotel-a")]);
+        write_checklist_items(&dir, &[("Passport", 1), ("Visa", 2), ("Power adapter", 3)]);
+
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
+
+        let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM checklist_items")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count.0, 3);
+
+        let row: (String, i64) =
+            sqlx::query_as("SELECT label, sort_order FROM checklist_items WHERE sort_order = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(row.0, "Passport");
+        assert_eq!(row.1, 1);
+    }
+
+    #[tokio::test]
     async fn seed_then_export_round_trip() {
         let pool = test_pool().await;
         let dir = make_seed_dir();
@@ -368,5 +453,27 @@ mod tests {
         let output = export_tsv(&pool).await;
         assert!(output.contains("2026-10-01\tbeijing\thotel-alpha"));
         assert!(output.contains("2026-10-02\tbeijing\t"));
+    }
+
+    #[tokio::test]
+    async fn seed_from_dir_inserts_tips() {
+        let pool = test_pool().await;
+        let dir = make_seed_dir();
+
+        write_cities(&dir, &[("beijing", "Beijing", "北京")]);
+        write_accommodations(&dir, &[("hotel-alpha", "Hotel Alpha")]);
+        write_days(&dir, &[("2026-10-01", "beijing", "hotel-alpha")]);
+        write_tips(&dir, "# China Tips\n\nBring a VPN.");
+
+        seed_from_dir(&pool, dir.path().to_str().unwrap()).await;
+
+        let row: (String, String) =
+            sqlx::query_as("SELECT key, content FROM tips WHERE key = 'main'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(row.0, "main");
+        assert!(row.1.contains("China Tips"));
+        assert!(row.1.contains("Bring a VPN"));
     }
 }

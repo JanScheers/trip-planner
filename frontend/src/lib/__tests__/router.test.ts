@@ -51,6 +51,16 @@ describe('parseHash', () => {
     expect(parseHash()).toEqual({ page: 'accommodation', params: { key: 'hotel-a' } });
   });
 
+  it('returns tips for #/tips', () => {
+    setHash('#/tips');
+    expect(parseHash()).toEqual({ page: 'tips', params: {} });
+  });
+
+  it('returns checklist for #/checklist', () => {
+    setHash('#/checklist');
+    expect(parseHash()).toEqual({ page: 'checklist', params: {} });
+  });
+
   it('returns home for unknown segment', () => {
     setHash('#/unknown');
     expect(parseHash()).toEqual({ page: 'home', params: {} });

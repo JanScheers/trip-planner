@@ -11,6 +11,8 @@
   import CityView from "./lib/components/CityView.svelte";
   import AccommodationsView from "./lib/components/AccommodationsView.svelte";
   import AccommodationView from "./lib/components/AccommodationView.svelte";
+  import TipsView from "./lib/components/TipsView.svelte";
+  import ChecklistView from "./lib/components/ChecklistView.svelte";
 
   let route: Route = $state(parseHash());
   let user: AuthUser | null = $state(null);
@@ -111,7 +113,7 @@
   class:day-page={route.page === "day" && !presentationMode}
   class:with-nav={!presentationMode && route.page !== "home"}
   class:with-day-bar={!presentationMode && route.page === "day"}
-  class:list-page={route.page === "basic" || route.page === "cities" || route.page === "accommodations"}
+  class:list-page={route.page === "basic" || route.page === "cities" || route.page === "accommodations" || route.page === "tips" || route.page === "checklist"}
   class:presentation-fullscreen={presentationMode && route.page === "day"}
   style="{(presentationMode || route.page === 'home' ? 'padding-top: 0px;' : '')} padding-bottom: {(presentationMode || route.page === 'day') ? 0 : 48}px;"
 >
@@ -123,6 +125,10 @@
     <CitiesView {user} {editMode} />
   {:else if route.page === "accommodations"}
     <AccommodationsView {user} {editMode} />
+  {:else if route.page === "tips"}
+    <TipsView {user} {editMode} />
+  {:else if route.page === "checklist"}
+    <ChecklistView {user} {editMode} />
   {:else if route.page === "day"}
     {#if presentationMode}
       <div class="presentation-viewport">

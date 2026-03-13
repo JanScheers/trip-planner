@@ -49,6 +49,8 @@
         <a href="#/days" class="nav-link">Itinerary</a>
         <a href="#/cities" class="nav-link">Cities</a>
         <a href="#/accommodations" class="nav-link">Stays</a>
+        <a href="#/tips" class="nav-link">Tips</a>
+        <a href="#/checklist" class="nav-link">Checklist</a>
       </div>
     </div>
     <div class="nav-right">
@@ -80,7 +82,7 @@
       {:else}
         <a
           href={api.auth.loginUrl}
-          class="btn-gold btn-sm"
+          class="btn-gold btn-sm nav-login-btn"
           style="text-decoration:none;">Login</a
         >
       {/if}
@@ -209,6 +211,10 @@
     background: var(--gold-glow);
     color: var(--gold);
     border-color: var(--border-gold);
+  }
+
+  .nav-login-btn {
+    border-radius: 99px;
   }
 
   @media (max-width: 600px) {

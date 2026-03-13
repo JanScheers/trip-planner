@@ -1,13 +1,15 @@
 pub mod accommodations;
 pub mod cities;
+pub mod checklist;
 pub mod days;
 pub mod export;
+pub mod tips;
 pub mod upload;
 
 use std::sync::Arc;
 
 use axum::extract::DefaultBodyLimit;
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::Router;
 
 use crate::auth::AppState;
@@ -44,6 +46,23 @@ pub fn router() -> Router<Arc<AppState>> {
                 .put(accommodations::update_accommodation)
                 .delete(accommodations::delete_accommodation),
         )
+        .route(
+            "/api/checklist/editors",
+            get(checklist::get_editors),
+        )
+        .route(
+            "/api/checklist/items",
+            get(checklist::get_items).post(checklist::create_item),
+        )
+        .route(
+            "/api/checklist/items/{id}",
+            put(checklist::update_item).delete(checklist::delete_item),
+        )
+        .route(
+            "/api/checklist/checks",
+            get(checklist::get_checks).put(checklist::put_check),
+        )
+        .route("/api/tips", get(tips::get_tips).put(tips::update_tips))
         .route("/api/export", get(export::export_tsv))
         .route(
             "/api/upload",

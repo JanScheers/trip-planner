@@ -564,6 +564,199 @@ async fn test_delete_accommodation_viewer_gets_403() {
     resp.assert_status(axum::http::StatusCode::FORBIDDEN);
 }
 
+// --- Tips ---
+
+#[tokio::test]
+async fn test_get_tips_empty() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server.get("/api/tips").await;
+    resp.assert_status_ok();
+
+    let tips: serde_json::Value = resp.json();
+    assert_eq!(tips["key"], "main");
+    assert_eq!(tips["content"], "");
+}
+
+#[tokio::test]
+async fn test_update_tips() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .put("/api/tips")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"content": "# Tips\n\nBring a VPN."}))
+        .await;
+    resp.assert_status_ok();
+
+    let tips: serde_json::Value = resp.json();
+    assert_eq!(tips["key"], "main");
+    assert!(tips["content"].as_str().unwrap().contains("Bring a VPN"));
+
+    let get_resp = server.get("/api/tips").await;
+    get_resp.assert_status_ok();
+    let got: serde_json::Value = get_resp.json();
+    assert!(got["content"].as_str().unwrap().contains("Bring a VPN"));
+}
+
+// --- Checklist ---
+
+#[tokio::test]
+async fn test_get_checklist_editors() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server.get("/api/checklist/editors").await;
+    resp.assert_status_ok();
+
+    let editors: Vec<serde_json::Value> = resp.json();
+    assert_eq!(editors.len(), 1);
+    assert_eq!(editors[0]["email"], "editor@test.com");
+}
+
+#[tokio::test]
+async fn test_get_checklist_items_empty() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server.get("/api/checklist/items").await;
+    resp.assert_status_ok();
+
+    let items: Vec<serde_json::Value> = resp.json();
+    assert!(items.is_empty());
+}
+
+#[tokio::test]
+async fn test_create_checklist_item() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .post("/api/checklist/items")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"label": "Passport", "sort_order": 1}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::CREATED);
+
+    let item: serde_json::Value = resp.json();
+    assert_eq!(item["label"], "Passport");
+    assert_eq!(item["sort_order"], 1);
+
+    let id = item["id"].as_i64().unwrap();
+
+    let list_resp = server.get("/api/checklist/items").await;
+    list_resp.assert_status_ok();
+    let items: Vec<serde_json::Value> = list_resp.json();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0]["id"], id);
+}
+
+#[tokio::test]
+async fn test_update_checklist_item() {
+    let server = setup_server(setup_pool().await).await;
+
+    let create_resp = server
+        .post("/api/checklist/items")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"label": "Visa"}))
+        .await;
+    let item: serde_json::Value = create_resp.json();
+    let id = item["id"].as_i64().unwrap();
+
+    let resp = server
+        .put(&format!("/api/checklist/items/{}", id))
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"label": "Visa + passport"}))
+        .await;
+    resp.assert_status_ok();
+
+    let updated: serde_json::Value = resp.json();
+    assert_eq!(updated["label"], "Visa + passport");
+}
+
+#[tokio::test]
+async fn test_delete_checklist_item() {
+    let server = setup_server(setup_pool().await).await;
+
+    let create_resp = server
+        .post("/api/checklist/items")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"label": "Adapter"}))
+        .await;
+    let item: serde_json::Value = create_resp.json();
+    let id = item["id"].as_i64().unwrap();
+
+    let resp = server
+        .delete(&format!("/api/checklist/items/{}", id))
+        .add_cookie(editor_cookie())
+        .await;
+    resp.assert_status_ok();
+
+    let list_resp = server.get("/api/checklist/items").await;
+    let items: Vec<serde_json::Value> = list_resp.json();
+    assert!(items.is_empty());
+}
+
+#[tokio::test]
+async fn test_checklist_put_check() {
+    let server = setup_server(setup_pool().await).await;
+
+    let create_resp = server
+        .post("/api/checklist/items")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"label": "Passport"}))
+        .await;
+    let item: serde_json::Value = create_resp.json();
+    let item_id = item["id"].as_i64().unwrap();
+
+    let resp = server
+        .put("/api/checklist/checks")
+        .add_cookie(editor_cookie())
+        .json(&serde_json::json!({"item_id": item_id, "checked": true}))
+        .await;
+    resp.assert_status_ok();
+
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["item_id"], item_id);
+    assert_eq!(body["editor_email"], "editor@test.com");
+    assert_eq!(body["checked"], true);
+
+    let checks_resp = server.get("/api/checklist/checks").await;
+    checks_resp.assert_status_ok();
+    let checks: serde_json::Value = checks_resp.json();
+    let key = format!("{}:editor@test.com", item_id);
+    assert_eq!(checks[key], true);
+}
+
+#[tokio::test]
+async fn test_create_checklist_item_requires_auth() {
+    let server = setup_server(setup_pool().await).await;
+
+    let resp = server
+        .post("/api/checklist/items")
+        .json(&serde_json::json!({"label": "Passport"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_update_tips_requires_auth() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .put("/api/tips")
+        .json(&serde_json::json!({"content": "Updated"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_update_tips_viewer_gets_403() {
+    let server = setup_server(setup_pool().await).await;
+    let resp = server
+        .put("/api/tips")
+        .add_cookie(viewer_cookie())
+        .json(&serde_json::json!({"content": "Updated"}))
+        .await;
+    resp.assert_status(axum::http::StatusCode::FORBIDDEN);
+}
+
 // --- Auth endpoints (/api/auth/*) ---
 
 #[tokio::test]
