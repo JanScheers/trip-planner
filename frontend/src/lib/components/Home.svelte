@@ -49,8 +49,6 @@
     return "future";
   }
 
-  let totalDays = $derived(days.length);
-  let citiesCount = $derived(new Set(days.map((d) => d.city_key)).size);
 </script>
 
 <div class="home">
@@ -64,7 +62,6 @@
     </div>
 
     <div class="hero-content">
-      <div class="hero-badge">An adventure awaits</div>
       <h1 class="hero-title">
         <span class="chinese-text title-chinese">中国之旅</span>
         <span class="hero-subtitle">China 2026</span>
@@ -74,7 +71,6 @@
         {#if countdown.past}
           <div class="countdown-label live-pulse">The journey has begun</div>
         {:else}
-          <div class="countdown-label">Departure in</div>
           <div class="countdown-grid">
             <div class="countdown-item">
               <span class="countdown-value">{countdown.days}</span>
@@ -103,23 +99,6 @@
             </div>
           </div>
         {/if}
-      </div>
-
-      <div class="hero-stats">
-        <div class="stat">
-          <span class="stat-value">{totalDays}</span>
-          <span class="stat-label">Days</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-value">{citiesCount}</span>
-          <span class="stat-label">Cities</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-value">1</span>
-          <span class="stat-label">Adventure</span>
-        </div>
       </div>
     </div>
   </div>
@@ -298,36 +277,18 @@
   .hero-content {
     position: relative;
     z-index: 1;
-    padding-top: 72px;
-  }
-
-  .hero-badge {
-    display: inline-block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--gold-dim);
-    border: 1px solid var(--border-gold);
-    padding: 4px 16px;
-    border-radius: 99px;
-    margin-bottom: 24px;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(232, 213, 163, 0.25) 100%
-    );
-    box-shadow: 0 2px 12px rgba(184, 134, 11, 0.1);
+    padding-top: 160px;
   }
 
   .hero-title {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 16px;
   }
 
   .title-chinese {
-    font-size: 56px;
+    font-size: 80px;
     background: linear-gradient(
       135deg,
       var(--gold) 0%,
@@ -338,14 +299,14 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.12em;
   }
 
   .hero-subtitle {
-    font-size: 15px;
+    font-size: 24px;
     color: #fff;
     font-weight: 400;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.35em;
     text-transform: uppercase;
     text-shadow:
       0 0 3px rgba(138, 109, 10, 0.8),
@@ -355,7 +316,7 @@
 
   /* --- Countdown --- */
   .countdown {
-    margin-top: 36px;
+    margin-top: 192px;
   }
 
   .countdown-label {
@@ -401,7 +362,7 @@
       180deg,
       #ffffff 0%,
       var(--bg-hover) 50%,
-      rgba(232, 213, 163, 0.08) 100%
+      #f5f3ef 100%
     );
     border: 1px solid var(--border-gold);
     border-radius: var(--radius-lg);
@@ -433,53 +394,6 @@
     font-weight: 300;
     margin-bottom: 18px;
     padding: 0 2px;
-  }
-
-  /* --- Stats --- */
-  .hero-stats {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    margin-top: 36px;
-  }
-
-  .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
-    -webkit-text-stroke: 2px rgba(138, 109, 10, 0.9);
-    paint-order: stroke fill;
-    text-shadow:
-      0 0 4px rgba(138, 109, 10, 0.6),
-      0 0 8px rgba(138, 109, 10, 0.4);
-  }
-
-  .stat-label {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #fff;
-    -webkit-text-stroke: 2px rgba(138, 109, 10, 0.9);
-    paint-order: stroke fill;
-    text-shadow:
-      0 0 4px rgba(138, 109, 10, 0.6),
-      0 0 8px rgba(138, 109, 10, 0.4);
-  }
-
-  .stat-divider {
-    width: 3px;
-    height: 36px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 2px;
   }
 
   /* --- Sections --- */
@@ -519,7 +433,7 @@
       180deg,
       #fff 0%,
       var(--bg-card-start) 50%,
-      rgba(232, 213, 163, 0.05) 100%
+      rgba(232, 213, 163, 0.18) 100%
     ) !important;
     box-shadow:
       0 2px 8px rgba(0, 0, 0, 0.04),
@@ -742,8 +656,19 @@
     .hero {
       padding: 48px 0 32px;
     }
+    .hero-content {
+      padding-top: 100px;
+    }
+    .countdown {
+      margin-top: 128px;
+    }
     .title-chinese {
-      font-size: 40px;
+      font-size: 56px;
+      letter-spacing: 0.08em;
+    }
+    .hero-subtitle {
+      font-size: 16px;
+      letter-spacing: 0.25em;
     }
     .countdown-value {
       font-size: 26px;
@@ -751,12 +676,6 @@
     .countdown-item {
       min-width: 56px;
       padding: 10px 6px 8px;
-    }
-    .hero-stats {
-      gap: 16px;
-    }
-    .stat-value {
-      font-size: 20px;
     }
     .segment-label {
       font-size: 9px;

@@ -26,12 +26,6 @@ test.describe('Home page', () => {
     expect(href).toMatch(/^#\/cities\//);
   });
 
-  test('shows stats section with 21 days', async ({ page }) => {
-    // Hero stats show totalDays (from API), citiesCount, and hardcoded Adventure
-    const statValues = page.locator('.stat-value');
-    await expect(statValues.first()).toHaveText('21', { timeout: 10_000 });
-  });
-
   test('renders the SVG route map', async ({ page }) => {
     // ChinaMap renders an SVG; wait for it to appear
     await expect(page.locator('svg')).toBeVisible({ timeout: 10_000 });

@@ -52,6 +52,16 @@
       </div>
     </div>
     <div class="nav-right">
+      {#if isDayPage && onEnterPresentation}
+        <button
+          class="nav-action-btn"
+          onclick={onEnterPresentation}
+          title="Full screen"
+          aria-label="Full screen"
+        >
+          ⛶
+        </button>
+      {/if}
       {#if user}
         {#if user.picture}
           <img src={user.picture} alt={user.name} class="user-avatar" />
@@ -64,16 +74,6 @@
             onclick={ontoggleedit}
           >
             {editMode ? "Editing" : "Edit"}
-          </button>
-        {/if}
-        {#if isDayPage && onEnterPresentation}
-          <button
-            class="nav-action-btn"
-            onclick={onEnterPresentation}
-            title="Full screen"
-            aria-label="Full screen"
-          >
-            ⛶
           </button>
         {/if}
         <a href={api.auth.logoutUrl} class="btn-outline btn-sm">Logout</a>

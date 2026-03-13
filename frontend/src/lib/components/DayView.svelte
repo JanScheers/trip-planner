@@ -164,8 +164,8 @@
       {/if}
       {formatDateLong(d.date)}
     </h1>
-    <div class="day-hero-subtext" class:edit={editable}>
-      {#if editable}
+    {#if editable}
+      <div class="day-hero-subtext edit">
         <span class="inline-select-wrap">
           <select
             class="inline-select"
@@ -199,19 +199,8 @@
             </button>
           {/if}
         </span>
-      {:else}
-        <div class="day-hero-city">
-          <a href="#/cities/{d.city_key}" class="day-hero-city-link">
-            {cityMap[d.city_key]?.name || d.city_key}
-          </a>
-          {#if cityMap[d.city_key]?.chinese_name}
-            <span class="day-hero-city-chinese chinese-text">
-              {cityMap[d.city_key].chinese_name}
-            </span>
-          {/if}
-        </div>
-      {/if}
-    </div>
+      </div>
+    {/if}
   {/snippet}
 
   <div
@@ -268,10 +257,15 @@
       {#if displayHeroImage}
         <div class="day-hero-overlay" aria-hidden="true"></div>
       {/if}
-      <div class="day-hero-content">
-        <div class="day-hero-title-strip">
-          {@render heroContent(day, editMode)}
-        </div>
+      <div class="day-city-display">
+        {#if cityMap[day.city_key]?.chinese_name}
+          <span class="day-city-chinese chinese-text">
+            {cityMap[day.city_key].chinese_name}
+          </span>
+        {/if}
+        <a href="#/cities/{day.city_key}" class="day-city-english">
+          {cityMap[day.city_key]?.name || day.city_key}
+        </a>
       </div>
     </div>
 
@@ -282,6 +276,9 @@
     <!-- 2. Content card (overlaps hero) -->
     <div class="slide-content">
       <div class="day-content-card">
+        <div class="day-content-title">
+          {@render heroContent(day, editMode)}
+        </div>
         {#if day.tagline || editMode}
           <div class="tagline-row">
             {#if editMode}
@@ -518,105 +515,30 @@
     );
   }
 
-  .day-hero-content {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 32px 48px 0;
-    text-align: left;
+  .day-content-title {
+    padding: 20px 24px 16px;
+    margin-bottom: 0;
   }
 
-  .day-hero-title-strip {
-    padding: 20px 28px;
-    border-radius: var(--radius-lg);
-  }
-
-  /* Placeholder: solid card */
-  .day-hero.has-placeholder .day-hero-title-strip {
-    background: linear-gradient(
-      135deg,
-      #fff 0%,
-      var(--bg-card-start) 50%,
-      color-mix(in srgb, var(--gold) 6%, #fff) 100%
-    );
-    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.15);
-    border: 1px solid var(--border-gold);
-  }
-
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-title,
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-subtext {
+  .day-content-title .day-hero-title {
     color: var(--text-primary);
   }
 
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-city-link {
-    color: var(--gold);
-  }
-
-  .day-hero.has-placeholder .day-hero-title-strip .day-hero-city-link:hover {
-    color: var(--gold-light);
-  }
-
-  .day-hero.has-placeholder .day-hero-title-strip .inline-select {
-    color: var(--gold);
-    border-color: var(--border);
-  }
-
-  .day-hero.has-placeholder .day-hero-title-strip .inline-select:hover {
-    border-color: var(--border-gold);
-    color: var(--gold-dim);
-  }
-
-  .day-hero.has-placeholder .day-hero-title-strip .inline-select:focus {
-    border-color: var(--gold);
-  }
-
-  /* On image: glass card with dark text */
-  .day-hero.has-image .day-hero-title-strip {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 253, 248, 0.75) 0%,
-      rgba(255, 253, 248, 0.6) 100%
-    );
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    box-shadow: 0 4px 24px rgba(44, 42, 38, 0.12);
-  }
-
-  .day-hero.has-image .day-hero-title-strip .day-hero-title {
-    color: var(--text-primary);
-    -webkit-text-fill-color: var(--text-primary);
-    text-shadow: none;
-  }
-
-  .day-hero.has-image .day-hero-title-strip .day-hero-subtext {
+  .day-content-title .day-hero-subtext {
     color: var(--text-secondary);
-    text-shadow: none;
   }
 
-  .day-hero.has-image .day-hero-title-strip .day-hero-city-link {
-    color: var(--text-primary);
-    font-weight: 700;
-    text-shadow: none;
-  }
-
-  .day-hero.has-image .day-hero-title-strip .day-hero-city-link:hover {
-    color: var(--gold);
-  }
-
-  .day-hero.has-image .day-hero-title-strip .inline-select {
+  .day-content-title .inline-select {
     color: var(--gold);
     border-color: var(--border);
-    background: var(--bg-hover);
   }
 
-  .day-hero.has-image .day-hero-title-strip .inline-select:hover {
+  .day-content-title .inline-select:hover {
     border-color: var(--border-gold);
     color: var(--gold-dim);
   }
 
-  .day-hero.has-image .day-hero-title-strip .inline-select:focus {
+  .day-content-title .inline-select:focus {
     border-color: var(--gold);
   }
 
@@ -638,25 +560,73 @@
     gap: 0 6px;
   }
 
-  .day-hero-city {
+  /* City display overlapping hero (like Home page) */
+  .day-city-display {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 72px 24px 32px;
+    text-align: center;
+    pointer-events: none;
   }
 
-  .day-hero-city-link {
-    font-size: 22px;
+  .day-city-display .day-city-english {
+    pointer-events: auto;
+  }
+
+  .day-city-chinese {
+    font-size: 72px;
     font-weight: 700;
+    letter-spacing: 0.05em;
+    background: linear-gradient(
+      135deg,
+      var(--gold) 0%,
+      var(--gold-light) 50%,
+      var(--gold-dim) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .day-city-english {
+    font-size: 20px;
+    color: #fff;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
     text-decoration: none;
+    text-shadow:
+      0 0 3px rgba(138, 109, 10, 0.8),
+      0 0 6px rgba(138, 109, 10, 0.5),
+      0 1px 2px rgba(44, 42, 38, 0.4);
+    transition: color 0.2s;
   }
 
-  .day-hero-city-link:hover {
-    text-decoration: underline;
+  .day-city-english:hover {
+    color: var(--gold-light);
   }
 
-  .day-hero-city-chinese {
-    font-size: 18px;
-    color: var(--text-secondary);
+  /* Placeholder hero: darker text for contrast */
+  .day-hero.has-placeholder .day-city-chinese {
+    -webkit-text-fill-color: var(--gold);
+    background: none;
+  }
+
+  .day-hero.has-placeholder .day-city-english {
+    color: var(--text-primary);
+    text-shadow: none;
+  }
+
+  .day-hero.has-placeholder .day-city-english:hover {
+    color: var(--gold);
   }
 
   .hero-placeholder-emoji {
@@ -714,7 +684,7 @@
 
   .day-notes {
     margin-top: 0;
-    padding: 20px 24px 24px;
+    padding: 0 24px 24px;
   }
 
   /* Section headers (markdown rendered in child) */
@@ -738,6 +708,10 @@
   .day-notes :global(.markdown-content h2:first-of-type),
   .day-notes :global(.markdown-content h3:first-of-type) {
     margin-top: 0;
+  }
+
+  .day-notes :global(.markdown-content hr) {
+    display: none;
   }
 
   .day-notes :global(.markdown-content p) {
@@ -832,7 +806,7 @@
   }
 
   .tagline-row {
-    padding: 20px 24px 12px;
+    padding: 0 24px 16px;
     margin-bottom: 0;
   }
 
@@ -840,7 +814,7 @@
     font-size: 18px;
     font-weight: 600;
     font-style: italic;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     margin: 0;
   }
 
@@ -889,6 +863,7 @@
     letter-spacing: 0.15em;
     color: var(--text-primary);
     font-weight: 600;
+    font-family: inherit;
     background: var(--gold-glow);
     padding: 8px 12px;
     margin-left: -24px;
@@ -899,8 +874,10 @@
   }
 
   .travel-text {
-    font-size: 13px;
-    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--text-primary);
+    font-family: inherit;
   }
 
   .travel-input {
@@ -908,8 +885,8 @@
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    font-size: 14px;
-    color: var(--text-secondary);
+    font-size: 16px;
+    color: var(--text-primary);
     background: var(--bg-card);
     font-family: inherit;
     transition:
@@ -1004,24 +981,24 @@
       max-height: min(50vh, 400px);
     }
 
-    .day-hero-content {
-      padding: 24px 24px 0;
-    }
-
-    .day-hero-title-strip {
-      padding: 16px 20px;
+    .day-content-title {
+      padding: 16px 20px 12px;
     }
 
     .day-hero-title {
       font-size: 26px;
     }
 
-    .day-hero-city-link {
+    .day-city-chinese {
+      font-size: 52px;
+    }
+
+    .day-city-english {
       font-size: 18px;
     }
 
-    .day-hero-city-chinese {
-      font-size: 16px;
+    .day-city-display {
+      padding: 56px 20px 24px;
     }
 
     .slide-content {
