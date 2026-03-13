@@ -1,6 +1,10 @@
 <script lang="ts">
+  import { getContext } from "svelte";
   import type { AuthUser } from "../types";
   import { api } from "../api";
+  import { BG_MUSIC_KEY } from "../bgMusic";
+
+  const bgMusic = getContext<{ playing: boolean; toggle: () => void }>(BG_MUSIC_KEY);
 
   let {
     user,
@@ -40,8 +44,7 @@
   <div class="nav-inner">
     <div class="nav-left">
       <a href="#/" class="nav-brand">
-        <span class="brand-icon">🏯</span>
-        <span class="brand-text">China 2026</span>
+        <span class="brand-text">中国</span>
       </a>
       <div class="nav-links">
         <a href="#/days" class="nav-link">Itinerary</a>
@@ -53,6 +56,29 @@
       </div>
     </div>
     <div class="nav-right">
+      {#if bgMusic}
+        <button
+          type="button"
+          class="nav-action-btn nav-music-btn"
+          onclick={bgMusic.toggle}
+          title={bgMusic.playing ? "Pause music" : "Play music"}
+          aria-label={bgMusic.playing ? "Pause background music" : "Play background music"}
+        >
+          {#if bgMusic.playing}
+            <svg class="nav-music-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+          {:else}
+            <svg class="nav-music-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <line x1="23" y1="9" x2="17" y2="15"/>
+              <line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+          {/if}
+        </button>
+      {/if}
       {#if isDayPage && onEnterPresentation}
         <button
           class="nav-action-btn"
@@ -123,10 +149,6 @@
 
   .nav-brand:hover {
     opacity: 0.85;
-  }
-
-  .brand-icon {
-    font-size: 22px;
   }
 
   .nav-links {
@@ -210,6 +232,16 @@
     background: var(--gold-glow);
     color: var(--gold);
     border-color: var(--border-gold);
+  }
+
+  .nav-music-btn {
+    padding: 6px 8px;
+  }
+
+  .nav-music-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
   }
 
   .nav-login-btn {

@@ -14,6 +14,7 @@
   import TipsView from "./lib/components/TipsView.svelte";
   import ChecklistView from "./lib/components/ChecklistView.svelte";
   import MapView from "./lib/components/MapView.svelte";
+  import BgMusic from "./lib/components/BgMusic.svelte";
 
   let route: Route = $state(parseHash());
   let user: AuthUser | null = $state(null);
@@ -83,6 +84,7 @@
   });
 </script>
 
+<BgMusic>
 {#if !presentationMode}
   <header class="app-header" bind:this={headerEl}>
     <Nav
@@ -166,6 +168,7 @@
     <AccommodationView key={route.params.key} {user} {editMode} />
   {/if}
 </main>
+</BgMusic>
 
 <style>
   .app-header {
