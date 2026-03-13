@@ -61,6 +61,11 @@ describe('parseHash', () => {
     expect(parseHash()).toEqual({ page: 'checklist', params: {} });
   });
 
+  it('returns map for #/map', () => {
+    setHash('#/map');
+    expect(parseHash()).toEqual({ page: 'map', params: {} });
+  });
+
   it('returns home for unknown segment', () => {
     setHash('#/unknown');
     expect(parseHash()).toEqual({ page: 'home', params: {} });

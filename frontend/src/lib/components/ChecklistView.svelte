@@ -1,26 +1,27 @@
 <script lang="ts">
-  import { api, parseApiError } from '../api';
-  import type { AuthUser, ChecklistItem, ChecklistEditor } from '../types';
-  import AddChecklistItemModal from './AddChecklistItemModal.svelte';
-  import ConfirmModal from './ConfirmModal.svelte';
-  import ListPageShell from './ListPageShell.svelte';
+  import { api, parseApiError } from "../api";
+  import type { AuthUser, ChecklistItem, ChecklistEditor } from "../types";
+  import AddChecklistItemModal from "./AddChecklistItemModal.svelte";
+  import ConfirmModal from "./ConfirmModal.svelte";
+  import ListPageShell from "./ListPageShell.svelte";
 
-  let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
+  let { user, editMode }: { user: AuthUser | null; editMode: boolean } =
+    $props();
 
   let items: ChecklistItem[] = $state([]);
   let editors: ChecklistEditor[] = $state([]);
   let checks: Record<string, boolean> = $state({});
   let showAddModal = $state(false);
   let deleteTarget: ChecklistItem | null = $state(null);
-  let deleteError = $state('');
+  let deleteError = $state("");
   let editingId: number | null = $state(null);
-  let editingLabel = $state('');
+  let editingLabel = $state("");
 
   let canAdd = $derived(editMode && user?.is_editor);
   let canEdit = $derived(editMode && user?.is_editor);
 
   function editorInitials(email: string): string {
-    const part = email.split('@')[0];
+    const part = email.split("@")[0];
     const segments = part.split(/[._-]/);
     if (segments.length >= 2) {
       return (segments[0][0] + segments[1][0]).toUpperCase();
@@ -72,7 +73,11 @@
     closeAddModal();
   }
 
-  async function handleToggle(itemId: number, editorEmail: string, currentlyChecked: boolean) {
+  async function handleToggle(
+    itemId: number,
+    editorEmail: string,
+    currentlyChecked: boolean,
+  ) {
     if (!canToggle(editorEmail)) return;
     const newChecked = !currentlyChecked;
     try {
@@ -85,17 +90,17 @@
 
   function openDeleteModal(item: ChecklistItem) {
     deleteTarget = item;
-    deleteError = '';
+    deleteError = "";
   }
 
   function closeDeleteModal() {
     deleteTarget = null;
-    deleteError = '';
+    deleteError = "";
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    deleteError = '';
+    deleteError = "";
     try {
       await api.checklist.deleteItem(deleteTarget.id);
       closeDeleteModal();
@@ -112,7 +117,7 @@
 
   function cancelEdit() {
     editingId = null;
-    editingLabel = '';
+    editingLabel = "";
   }
 
   async function saveEdit() {
@@ -120,7 +125,7 @@
     try {
       await api.checklist.updateItem(editingId, { label: editingLabel.trim() });
       items = items.map((i) =>
-        i.id === editingId ? { ...i, label: editingLabel.trim() } : i
+        i.id === editingId ? { ...i, label: editingLabel.trim() } : i,
       );
       cancelEdit();
     } catch {
@@ -131,21 +136,27 @@
 </script>
 
 {#snippet addAction()}
-  <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add item</button>
+  <button type="button" class="btn-gold btn-sm" onclick={openAddModal}
+    >Add item</button
+  >
 {/snippet}
 
 <ListPageShell
   eyebrow="Group prep"
   title="Checklist"
   subtitle="Track what each traveler has done"
-  stats={items.length > 0 ? [`${items.length} items`, `${editors.length} travelers`] : []}
+  stats={items.length > 0
+    ? [`${items.length} items`, `${editors.length} travelers`]
+    : []}
   action={canAdd ? addAction : undefined}
 >
   <div class="checklist-card card card-brochure">
     {#if items.length === 0 && editors.length === 0}
       <p class="text-muted">Loading...</p>
     {:else if editors.length === 0}
-      <p class="text-muted">No editors configured. Set EDITOR_EMAILS to see checklist columns.</p>
+      <p class="text-muted">
+        No editors configured. Set EDITOR_EMAILS to see checklist columns.
+      </p>
     {:else if items.length === 0}
       <p class="text-muted">No items yet. Add items to get started.</p>
     {:else}
@@ -160,7 +171,8 @@
                   class:col-check-mine={isMyColumn(editor.email)}
                   title={editor.email}
                 >
-                  <span class="editor-chip">{editorInitials(editor.email)}</span>
+                  <span class="editor-chip">{editorInitials(editor.email)}</span
+                  >
                 </th>
               {/each}
               {#if canEdit}
@@ -186,28 +198,26 @@
                         class="inline-edit-input"
                         onblur={saveEdit}
                         onkeydown={(e) => {
-                          if (e.key === 'Escape') cancelEdit();
+                          if (e.key === "Escape") cancelEdit();
                         }}
                       />
                     </form>
+                  {:else if canEdit}
+                    <button
+                      type="button"
+                      class="item-label editable"
+                      onclick={() => startEdit(item)}
+                      onkeydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          startEdit(item);
+                        }
+                      }}
+                    >
+                      {item.label}
+                    </button>
                   {:else}
-                    {#if canEdit}
-                      <button
-                        type="button"
-                        class="item-label editable"
-                        onclick={() => startEdit(item)}
-                        onkeydown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            startEdit(item);
-                          }
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    {:else}
-                      <span class="item-label">{item.label}</span>
-                    {/if}
+                    <span class="item-label">{item.label}</span>
                   {/if}
                 </td>
                 {#each editors as editor}
@@ -218,7 +228,11 @@
                         class="check-btn"
                         class:checked={isChecked(item.id, editor.email)}
                         onclick={() =>
-                          handleToggle(item.id, editor.email, isChecked(item.id, editor.email))}
+                          handleToggle(
+                            item.id,
+                            editor.email,
+                            isChecked(item.id, editor.email),
+                          )}
                         aria-label="Toggle {item.label} for {editor.email}"
                         aria-pressed={isChecked(item.id, editor.email)}
                       >
@@ -277,6 +291,7 @@
 
 <style>
   .checklist-card {
+    padding: 0;
     overflow-x: auto;
     border: var(--brochure-card-border);
     box-shadow: var(--brochure-card-shadow);

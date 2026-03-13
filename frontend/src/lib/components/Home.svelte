@@ -48,7 +48,6 @@
     if (day.date === today) return "current";
     return "future";
   }
-
 </script>
 
 <div class="home">
@@ -114,24 +113,25 @@
       <div class="city-grid-fullwidth">
         <div class="map-card card">
           <ChinaMap
-          {cities}
-          {days}
-          onCityClick={(key) => navigate(`/cities/${key}`)}
-        />
-        <div class="progress-bar">
-          {#each days as day}
-            <a
-              href="#/days/{day.id}"
-              class="progress-segment {getDayProgress(day)}"
-              style="--seg-color: {getCityColor(day.city_key, cities)};"
-              title="{day.date} — {cityMap[day.city_key]?.name || day.city_key}"
-            >
-              <span class="segment-label"
-                >{new Date(day.date + "T00:00:00").getDate()}</span
+            {cities}
+            {days}
+            onCityClick={(key) => navigate(`/cities/${key}`)}
+          />
+          <div class="progress-bar">
+            {#each days as day}
+              <a
+                href="#/days/{day.id}"
+                class="progress-segment {getDayProgress(day)}"
+                style="--seg-color: {getCityColor(day.city_key, cities)};"
+                title="{day.date} — {cityMap[day.city_key]?.name ||
+                  day.city_key}"
               >
-            </a>
-          {/each}
-        </div>
+                <span class="segment-label"
+                  >{new Date(day.date + "T00:00:00").getDate()}</span
+                >
+              </a>
+            {/each}
+          </div>
         </div>
       </div>
     </section>
@@ -143,38 +143,40 @@
       </div>
       <div class="city-grid-fullwidth">
         <div class="city-grid">
-        {#each cities as city}
-          <a
-            href="#/cities/{city.key}"
-            class="city-card"
-            style="--city-color: {getCityColor(city.key, cities)};"
-          >
-            <div
-              class="city-card-image"
-              role="img"
-              aria-label="{city.name}"
-              style="background-image: url('{staticUrl(city.hero_image) ||
-              "https://images.unsplash.com/photo-1751688472649-ed13c46ccfe1?auto=format&fit=crop&w=800&q=80"}');"
-            ></div>
-            <div class="city-card-overlay"></div>
-            <div class="city-card-body">
-              {#if city.emoji}
-                <span class="city-emoji">{city.emoji}</span>
-              {/if}
-              <h3 class="city-name">{city.name}</h3>
-              {#if city.chinese_name}
-                <span class="city-chinese chinese-text">{city.chinese_name}</span>
-              {/if}
-              <p class="city-desc">{city.tagline}</p>
-              <div class="city-card-footer">
-                <span class="city-days-count"
-                  >{days.filter((d) => d.city_key === city.key).length} days</span
-                >
-                <span class="city-arrow">&rarr;</span>
+          {#each cities as city}
+            <a
+              href="#/cities/{city.key}"
+              class="city-card"
+              style="--city-color: {getCityColor(city.key, cities)};"
+            >
+              <div
+                class="city-card-image"
+                role="img"
+                aria-label={city.name}
+                style="background-image: url('{staticUrl(city.hero_image) ||
+                  'https://images.unsplash.com/photo-1751688472649-ed13c46ccfe1?auto=format&fit=crop&w=800&q=80'}');"
+              ></div>
+              <div class="city-card-overlay"></div>
+              <div class="city-card-body">
+                {#if city.emoji}
+                  <span class="city-emoji">{city.emoji}</span>
+                {/if}
+                <h3 class="city-name">{city.name}</h3>
+                {#if city.chinese_name}
+                  <span class="city-chinese chinese-text"
+                    >{city.chinese_name}</span
+                  >
+                {/if}
+                <p class="city-desc">{city.tagline}</p>
+                <div class="city-card-footer">
+                  <span class="city-days-count"
+                    >{days.filter((d) => d.city_key === city.key).length} days</span
+                  >
+                  <span class="city-arrow">&rarr;</span>
+                </div>
               </div>
-            </div>
-          </a>
-        {/each}
+            </a>
+          {/each}
         </div>
       </div>
     </section>
@@ -231,8 +233,8 @@
       rgba(44, 42, 38, 0.5) 0%,
       rgba(44, 42, 38, 0.35) 25%,
       rgba(44, 42, 38, 0.15) 50%,
-      rgba(245, 243, 239, 0.4) 75%,
-      rgba(245, 243, 239, 0.92) 100%
+      rgba(255, 255, 255, 0.4) 75%,
+      rgba(255, 255, 255, 0.92) 100%
     );
   }
 
@@ -362,7 +364,7 @@
       180deg,
       #ffffff 0%,
       var(--bg-hover) 50%,
-      #f5f3ef 100%
+      var(--bg-primary) 100%
     );
     border: 1px solid var(--border-gold);
     border-radius: var(--radius-lg);
@@ -433,7 +435,7 @@
       180deg,
       #fff 0%,
       var(--bg-card-start) 50%,
-      rgba(232, 213, 163, 0.18) 100%
+      color-mix(in srgb, var(--bg-primary) 85%, transparent) 100%
     ) !important;
     box-shadow:
       0 2px 8px rgba(0, 0, 0, 0.04),
@@ -592,7 +594,7 @@
   .progress-segment.current {
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--seg-color) 70%, white) 0%,
+      color-mix(in srgb, var(--seg-color) 70%, var(--bg-secondary)) 0%,
       var(--seg-color) 100%
     );
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);

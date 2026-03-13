@@ -94,7 +94,7 @@
   .progress-segment.current {
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--seg-color) 70%, white) 0%,
+      color-mix(in srgb, var(--seg-color) 70%, var(--bg-secondary)) 0%,
       color-mix(in srgb, var(--seg-color) 55%, var(--bg-secondary)) 100%
     );
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);

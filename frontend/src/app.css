@@ -1,23 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;700&display=swap");
 
 :root {
-  /* Light palette */
-  --bg-primary: #f5f3ef;
-  --bg-primary-end: #ebe8e0;
+  /* Pure white palette */
+  --bg-primary: #ffffff;
+  --bg-primary-end: #ffffff;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-start: #fefdfb;
-  --bg-hover: #f8f6f1;
+  --bg-card-start: #ffffff;
+  --bg-hover: #fafafa;
   --gold: #b8860b;
   --gold-light: #c99a1a;
   --gold-soft: #e8d5a3;
   --gold-dim: #8a6d0a;
   --gold-glow: rgba(184, 134, 11, 0.12);
-  --gold-gradient: linear-gradient(135deg, #e8c547 0%, #c99a1a 25%, #b8860b 50%, #8a6d0a 100%);
-  --text-primary: #2c2a26;
-  --text-secondary: #5c5852;
-  --text-muted: #7a756e;
-  --border: #e5e2dc;
+  --gold-gradient: linear-gradient(
+    135deg,
+    #e8c547 0%,
+    #c99a1a 25%,
+    #b8860b 50%,
+    #8a6d0a 100%
+  );
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
   --border-gold: rgba(184, 134, 11, 0.35);
   --danger: #b91c1c;
   --success: #15803d;
@@ -27,12 +33,31 @@
   --day-nav-bar-height: 56px;
   --transition: 0.2s ease;
   /* Gradient tokens */
-  --gradient-page: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-primary-end) 100%);
-  --gradient-card: linear-gradient(180deg, var(--bg-card-start) 0%, var(--bg-card) 100%);
-  --gradient-hero: linear-gradient(180deg, rgba(245, 243, 239, 0.6) 0%, rgba(235, 232, 224, 0.9) 50%, var(--bg-primary) 100%);
+  --gradient-page: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-primary-end) 100%
+  );
+  --gradient-card: linear-gradient(
+    180deg,
+    var(--bg-card-start) 0%,
+    var(--bg-card) 100%
+  );
+  --gradient-hero: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    var(--bg-primary) 100%
+  );
   /* Brochure list-page tokens */
-  --brochure-title-gradient: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold-dim) 100%);
-  --brochure-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(44, 42, 38, 0.08);
+  --brochure-title-gradient: linear-gradient(
+    135deg,
+    var(--gold) 0%,
+    var(--gold-light) 50%,
+    var(--gold-dim) 100%
+  );
+  --brochure-card-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(44, 42, 38, 0.08);
   --brochure-card-border: 1px solid rgba(184, 134, 11, 0.12);
 }
 
@@ -46,11 +71,16 @@ html {
   scroll-behavior: smooth;
 }
 
-html, body {
+html,
+body {
   background: var(--gradient-page);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: 'Noto Sans', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Noto Sans",
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
@@ -124,7 +154,9 @@ button {
   font-size: 13px;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border);
@@ -132,11 +164,15 @@ input, textarea, select {
   padding: 8px 12px;
   font-family: inherit;
   font-size: inherit;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
   width: 100%;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--gold);
   box-shadow: 0 0 0 3px var(--gold-glow);
@@ -153,7 +189,9 @@ textarea {
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 /* Brochure list-page shell */
@@ -257,7 +295,10 @@ textarea {
   padding: 20px 24px;
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
   border-left: 4px solid transparent;
 }
 
@@ -320,7 +361,9 @@ textarea {
 .media-list-arrow {
   font-size: 18px;
   color: var(--text-muted);
-  transition: transform 0.2s, color 0.2s;
+  transition:
+    transform 0.2s,
+    color 0.2s;
   flex-shrink: 0;
 }
 
@@ -336,7 +379,7 @@ textarea {
 }
 
 .chinese-text {
-  font-family: 'Noto Serif SC', serif;
+  font-family: "Noto Serif SC", serif;
 }
 
 table {
@@ -386,7 +429,11 @@ tr:hover td {
   border-radius: var(--radius-lg);
   margin-bottom: 20px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--gold-glow) 0%, color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--gold-glow) 0%,
+    color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -465,7 +512,8 @@ tr:hover td {
   color: var(--text-secondary);
 }
 
-.markdown-content ul, .markdown-content ol {
+.markdown-content ul,
+.markdown-content ol {
   padding-left: 24px;
   margin-bottom: 8px;
 }
@@ -500,7 +548,8 @@ tr:hover td {
     font-size: 13px;
   }
 
-  th, td {
+  th,
+  td {
     padding: 8px;
   }
 

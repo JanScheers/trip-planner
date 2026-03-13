@@ -19,9 +19,7 @@
   } = $props();
 
   let scrollY = $state(0);
-  let navOpacity = $derived(
-    isHomePage ? Math.min(1, scrollY / 120) : 1
-  );
+  let navOpacity = $derived(isHomePage ? Math.min(1, scrollY / 120) : 1);
 
   $effect(() => {
     const onScroll = () => {
@@ -47,6 +45,7 @@
       </a>
       <div class="nav-links">
         <a href="#/days" class="nav-link">Itinerary</a>
+        <a href="#/map" class="nav-link">Map</a>
         <a href="#/cities" class="nav-link">Cities</a>
         <a href="#/accommodations" class="nav-link">Stays</a>
         <a href="#/tips" class="nav-link">Tips</a>
@@ -92,7 +91,7 @@
 
 <style>
   nav {
-    background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
+    background: linear-gradient(180deg, #ffffff 0%, var(--bg-primary) 100%);
     border-bottom: 1px solid var(--border);
     box-shadow: 0 2px 20px rgba(44, 42, 38, 0.06);
   }

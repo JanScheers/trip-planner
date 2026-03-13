@@ -9,12 +9,15 @@
     cities,
     days,
     onCityClick,
-  }: { cities: City[]; days: Day[]; onCityClick: (key: string) => void } =
-    $props();
+    fullHeight = false,
+  }: {
+    cities: City[];
+    days: Day[];
+    onCityClick: (key: string) => void;
+    fullHeight?: boolean;
+  } = $props();
 
-  let routeOrder = $derived(
-    [...new Set(days.map((d) => d.city_key))],
-  );
+  let routeOrder = $derived([...new Set(days.map((d) => d.city_key))]);
 
   function getCityCoords(key: string): [number, number] | null {
     const city = cities.find((c) => c.key === key);
@@ -230,8 +233,9 @@
   // Update sources when cities/days props change
   $effect(() => {
     const _dep =
-      cities.map((c) => `${c.key}${c.name}${c.chinese_name}${c.lat}${c.lng}`).join(",") +
-      routeOrder.join(",");
+      cities
+        .map((c) => `${c.key}${c.name}${c.chinese_name}${c.lat}${c.lng}`)
+        .join(",") + routeOrder.join(",");
 
     const citySrc = map?.getSource("cities") as
       | maplibregl.GeoJSONSource
@@ -247,7 +251,7 @@
   });
 </script>
 
-<div class="map-wrap">
+<div class="map-wrap" class:full-height={fullHeight}>
   <div bind:this={mapContainer} class="map-container"></div>
 </div>
 
@@ -257,6 +261,11 @@
     height: 480px;
   }
 
+  .map-wrap.full-height {
+    height: 100%;
+    min-height: 480px;
+  }
+
   .map-container {
     width: 100%;
     height: 100%;
@@ -264,7 +273,7 @@
 
   /* ── MapLibre chrome overrides (light mode) ── */
   :global(.maplibregl-ctrl-attrib) {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: color-mix(in srgb, var(--bg-primary) 95%, white) !important;
     color: #7a756e !important;
     font-size: 10px !important;
     border: 1px solid var(--border);
@@ -273,7 +282,7 @@
     color: var(--gold) !important;
   }
   :global(.maplibregl-ctrl-group) {
-    background: #fff !important;
+    background: var(--bg-secondary) !important;
     border: 1px solid var(--border) !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 12px rgba(44, 42, 38, 0.1) !important;
@@ -287,12 +296,19 @@
     align-items: center !important;
     justify-content: center !important;
     transition: background-color 0.2s ease !important;
+    border-radius: 0 !important;
+  }
+  :global(.maplibregl-ctrl-group button:first-child) {
+    border-radius: 8px 8px 0 0 !important;
+  }
+  :global(.maplibregl-ctrl-group button:last-child) {
+    border-radius: 0 0 8px 8px !important;
   }
   :global(.maplibregl-ctrl-group button:hover) {
     background-color: var(--bg-hover) !important;
   }
   :global(.maplibregl-ctrl-group button:active) {
-    background-color: #e5e2dc !important;
+    background-color: var(--border) !important;
   }
   :global(.maplibregl-ctrl-group button + button) {
     border-top: 1px solid var(--border) !important;
