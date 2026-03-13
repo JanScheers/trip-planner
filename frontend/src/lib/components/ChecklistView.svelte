@@ -3,6 +3,7 @@
   import type { AuthUser, ChecklistItem, ChecklistEditor } from '../types';
   import AddChecklistItemModal from './AddChecklistItemModal.svelte';
   import ConfirmModal from './ConfirmModal.svelte';
+  import ListPageShell from './ListPageShell.svelte';
 
   let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
 
@@ -17,6 +18,15 @@
 
   let canAdd = $derived(editMode && user?.is_editor);
   let canEdit = $derived(editMode && user?.is_editor);
+
+  function editorInitials(email: string): string {
+    const part = email.split('@')[0];
+    const segments = part.split(/[._-]/);
+    if (segments.length >= 2) {
+      return (segments[0][0] + segments[1][0]).toUpperCase();
+    }
+    return part.slice(0, 2).toUpperCase();
+  }
 
   function checkKey(itemId: number, editorEmail: string): string {
     return `${itemId}:${editorEmail}`;
@@ -120,14 +130,18 @@
   }
 </script>
 
-<div class="checklist-section">
-  {#if canAdd}
-    <div class="section-header">
-      <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add item</button>
-    </div>
-  {/if}
+{#snippet addAction()}
+  <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add item</button>
+{/snippet}
 
-  <div class="checklist-card card">
+<ListPageShell
+  eyebrow="Group prep"
+  title="Checklist"
+  subtitle="Track what each traveler has done"
+  stats={items.length > 0 ? [`${items.length} items`, `${editors.length} travelers`] : []}
+  action={canAdd ? addAction : undefined}
+>
+  <div class="checklist-card card card-brochure">
     {#if items.length === 0 && editors.length === 0}
       <p class="text-muted">Loading...</p>
     {:else if editors.length === 0}
@@ -141,8 +155,12 @@
             <tr>
               <th class="col-item">Item</th>
               {#each editors as editor}
-                <th class="col-check" title={editor.email}>
-                  {editor.email.split('@')[0]}
+                <th
+                  class="col-check"
+                  class:col-check-mine={isMyColumn(editor.email)}
+                  title={editor.email}
+                >
+                  <span class="editor-chip">{editorInitials(editor.email)}</span>
                 </th>
               {/each}
               {#if canEdit}
@@ -238,7 +256,7 @@
       </div>
     {/if}
   </div>
-</div>
+</ListPageShell>
 
 <AddChecklistItemModal
   open={showAddModal}
@@ -258,21 +276,10 @@
 />
 
 <style>
-  .checklist-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 16px;
-  }
-
   .checklist-card {
     overflow-x: auto;
+    border: var(--brochure-card-border);
+    box-shadow: var(--brochure-card-shadow);
   }
 
   .checklist-table-wrap {
@@ -285,15 +292,26 @@
     min-width: 400px;
   }
 
+  .checklist-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(
+      180deg,
+      var(--bg-hover) 0%,
+      var(--bg-secondary) 100%
+    );
+  }
+
   .checklist-table th,
   .checklist-table td {
-    padding: 12px 16px;
+    padding: 14px 18px;
     text-align: left;
     border-bottom: 1px solid var(--border);
   }
 
   .checklist-table th {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -301,12 +319,52 @@
   }
 
   .col-item {
-    min-width: 180px;
+    min-width: 200px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg-card);
+  }
+
+  .checklist-table thead .col-item {
+    background: linear-gradient(
+      180deg,
+      var(--bg-hover) 0%,
+      var(--bg-secondary) 100%
+    );
+  }
+
+  .checklist-table tbody tr:hover .col-item {
+    background: var(--bg-hover);
   }
 
   .col-check {
-    width: 48px;
+    width: 56px;
     text-align: center;
+  }
+
+  .col-check-mine {
+    background: color-mix(in srgb, var(--gold-glow) 80%, var(--bg-secondary));
+  }
+
+  .editor-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    background: var(--gold-glow);
+    border: 1px solid var(--border-gold);
+  }
+
+  .col-check-mine .editor-chip {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+    color: var(--gold);
   }
 
   .col-actions {

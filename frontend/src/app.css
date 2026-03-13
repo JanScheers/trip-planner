@@ -30,6 +30,10 @@
   --gradient-page: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-primary-end) 100%);
   --gradient-card: linear-gradient(180deg, var(--bg-card-start) 0%, var(--bg-card) 100%);
   --gradient-hero: linear-gradient(180deg, rgba(245, 243, 239, 0.6) 0%, rgba(235, 232, 224, 0.9) 50%, var(--bg-primary) 100%);
+  /* Brochure list-page tokens */
+  --brochure-title-gradient: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold-dim) 100%);
+  --brochure-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(44, 42, 38, 0.08);
+  --brochure-card-border: 1px solid rgba(184, 134, 11, 0.12);
 }
 
 * {
@@ -150,6 +154,179 @@ textarea {
   padding: 24px;
   box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+/* Brochure list-page shell */
+.list-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.list-page-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold-dim);
+}
+
+.list-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  background: var(--brochure-title-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.list-page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: -4px 0 0;
+}
+
+.list-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.list-page-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.list-page-action {
+  margin-left: auto;
+}
+
+.list-page-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.list-page-stat-chip {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gold-dim);
+  background: var(--gold-glow);
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border-gold);
+}
+
+/* Premium brochure card variant */
+.card-brochure {
+  background: linear-gradient(
+    180deg,
+    var(--bg-card-start) 0%,
+    var(--bg-card) 50%,
+    color-mix(in srgb, var(--gold) 4%, var(--bg-card)) 100%
+  ) !important;
+  border: var(--brochure-card-border);
+  box-shadow: var(--brochure-card-shadow);
+}
+
+/* Shared media-row list (for CitiesView, AccommodationsView) */
+.media-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.media-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.media-list li:last-child {
+  border-bottom: none;
+}
+
+.media-list-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  border-left: 4px solid transparent;
+}
+
+.media-list-link:hover {
+  background: var(--bg-hover);
+}
+
+.media-list-tile {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.media-list-tile-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: var(--gold-glow);
+}
+
+.media-list-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.media-list-title {
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text-primary);
+}
+
+.media-list-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.media-list-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gold-dim);
+  background: var(--gold-glow);
+  padding: 6px 12px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.media-list-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.media-list-link:hover .media-list-arrow {
+  color: var(--gold);
+  transform: translateX(4px);
 }
 
 .container {
@@ -278,6 +455,16 @@ tr:hover td {
   margin-bottom: 8px;
 }
 
+.markdown-content blockquote {
+  margin: 16px 0;
+  padding: 10px 16px;
+  border-left: 4px solid var(--gold);
+  background: var(--gold-glow);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
 .markdown-content ul, .markdown-content ol {
   padding-left: 24px;
   margin-bottom: 8px;
@@ -319,5 +506,59 @@ tr:hover td {
 
   .page-header h1 {
     font-size: 22px;
+  }
+
+  /* Brochure list-page responsive */
+  .list-page-title {
+    font-size: 24px;
+  }
+
+  .list-page-stats {
+    gap: 6px;
+  }
+
+  .list-page-stat-chip {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .media-list-link {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  .media-list-tile,
+  .media-list-tile-placeholder {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .media-list-title {
+    font-size: 16px;
+  }
+
+  .media-list-meta {
+    font-size: 12px;
+  }
+
+  .media-list-badge {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-page-title {
+    font-size: 20px;
+  }
+
+  .list-page-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .list-page-action {
+    margin-left: 0;
   }
 }

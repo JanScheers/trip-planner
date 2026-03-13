@@ -4,6 +4,7 @@
   import { navigate } from '../router';
   import type { AuthUser, City, Day } from '../types';
   import AddCityModal from './AddCityModal.svelte';
+  import ListPageShell from './ListPageShell.svelte';
 
   let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
 
@@ -12,6 +13,14 @@
   let showAddModal = $state(false);
 
   let canAdd = $derived(editMode && user?.is_editor);
+  let stats = $derived(
+    cities.length > 0
+      ? [
+          `${cities.length} ${cities.length === 1 ? 'city' : 'cities'}`,
+          `${days.length} days planned`,
+        ]
+      : [],
+  );
 
   $effect(() => {
     loadData();
@@ -38,40 +47,72 @@
   }
 </script>
 
-<div class="cities-section">
-  <div class="section-header">
-    <h2 class="section-title">Cities</h2>
-    {#if canAdd}
-      <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add city</button>
+{#snippet addAction()}
+  <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add city</button>
+{/snippet}
+
+<ListPageShell
+  eyebrow="Destinations"
+  title="Cities"
+  subtitle="Seven cities, each with its own story"
+  stats={stats}
+  action={canAdd ? addAction : undefined}
+>
+
+  <div class="city-list card card-brochure">
+    {#if cities.length === 0}
+      <p class="list-empty">Loading...</p>
+    {:else}
+      <ul class="media-list">
+        {#each cities as city}
+          {@const cityColor = getCityColor(city.key, cities)}
+          {@const dayCount = days.filter((d) => d.city_key === city.key).length}
+          <li>
+            <a
+              href="#/cities/{city.key}"
+              class="media-list-link"
+              style="--city-color: {cityColor};"
+            >
+              {#if city.hero_image}
+                <img
+                  src={staticUrl(city.hero_image)}
+                  alt=""
+                  class="media-list-tile"
+                  loading="lazy"
+                />
+              {:else}
+                <span
+                  class="media-list-tile-placeholder"
+                  style="--tint: {cityColor}; background: color-mix(in srgb, var(--tint) 18%, var(--gold-glow));"
+                >
+                  {city.emoji || '🏙️'}
+                </span>
+              {/if}
+              <div class="media-list-body">
+                <span class="media-list-title">{city.name}</span>
+                {#if city.chinese_name || city.tagline}
+                  <span class="media-list-meta">
+                    {#if city.chinese_name}
+                      <span class="chinese-text">{city.chinese_name}</span>
+                    {/if}
+                    {#if city.chinese_name && city.tagline}
+                      <span class="meta-sep"> · </span>
+                    {/if}
+                    {#if city.tagline}
+                      <span>{city.tagline}</span>
+                    {/if}
+                  </span>
+                {/if}
+              </div>
+              <span class="media-list-badge">{dayCount} day{dayCount !== 1 ? 's' : ''}</span>
+              <span class="media-list-arrow">&rarr;</span>
+            </a>
+          </li>
+        {/each}
+      </ul>
     {/if}
   </div>
-
-  <div class="city-list card">
-  {#if cities.length === 0}
-    <p class="text-muted">Loading...</p>
-  {:else}
-    <ul class="city-list-ul">
-      {#each cities as city}
-        <li>
-          <a href="#/cities/{city.key}" class="city-list-link" style="--city-color: {getCityColor(city.key, cities)};">
-            {#if city.hero_image}
-              <img src={staticUrl(city.hero_image)} alt="" class="city-list-thumb" loading="lazy" />
-            {:else}
-              <span class="city-list-dot" style="background: {getCityColor(city.key, cities)};"></span>
-            {/if}
-            <span class="city-list-name">{city.name}</span>
-            {#if city.chinese_name}
-              <span class="city-list-chinese chinese-text">{city.chinese_name}</span>
-            {/if}
-            <span class="city-list-days">{days.filter(d => d.city_key === city.key).length} days</span>
-            <span class="city-list-arrow">&rarr;</span>
-          </a>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-  </div>
-</div>
+</ListPageShell>
 
 <AddCityModal
   open={showAddModal}
@@ -80,108 +121,17 @@
 />
 
 <style>
-  .cities-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
   .city-list {
     padding: 0;
     overflow: hidden;
   }
 
-  .city-list-ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .city-list-ul li {
-    border-bottom: 1px solid var(--border);
-  }
-
-  .city-list-ul li:last-child {
-    border-bottom: none;
-  }
-
-  .city-list-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    text-decoration: none;
-    color: inherit;
-    transition: background 0.2s, border-color 0.2s;
-    border-left: 3px solid transparent;
-  }
-
-  .city-list-link:hover {
-    background: var(--bg-hover);
+  .media-list-link:hover {
     border-left-color: var(--city-color);
   }
 
-  .city-list-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .city-list-thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius);
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-  }
-
-  .city-list-name {
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .city-list-chinese {
-    font-size: 13px;
+  .list-empty {
     color: var(--text-muted);
-  }
-
-  .city-list-days {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .city-list-arrow {
-    font-size: 14px;
-    color: var(--text-muted);
-    transition: transform 0.2s;
-  }
-
-  .city-list-link:hover .city-list-arrow {
-    color: var(--city-color);
-    transform: translateX(4px);
-  }
-
-  .text-muted {
-    color: var(--text-muted);
-    padding: 24px 20px;
+    padding: 24px 24px;
   }
 </style>

@@ -4,6 +4,7 @@
   import { formatDate } from "../format";
   import { navigate } from "../router";
   import type { Day, City, Accommodation, AuthUser } from "../types";
+  import ListPageShell from "./ListPageShell.svelte";
 
   let { user, editMode }: { user: AuthUser | null; editMode: boolean } =
     $props();
@@ -29,6 +30,16 @@
     Object.fromEntries(accommodations.map((a) => [a.key, a])),
   );
   let canEdit = $derived(editMode);
+  let stats = $derived(
+    days.length > 0
+      ? [
+          `${days.length} days`,
+          `${new Set(days.map((d) => d.city_key)).size} cities`,
+          `${new Set(days.map((d) => d.accommodation_key).filter(Boolean)).size} stays`,
+        ]
+      : [],
+  );
+
   function dayThumbUrl(day: Day): string | null {
     return day.hero_image || cityMap[day.city_key]?.hero_image || null;
   }
@@ -43,19 +54,22 @@
     await api.days.update(day.id, { accommodation_key: key });
     await loadData();
   }
-
 </script>
 
-<div class="itinerary-section" class:edit-mode={canEdit}>
-  <div class="section-header">
-    <h2 class="section-title">Itinerary</h2>
-    {#if canEdit}
-      <a href={api.exportUrl} class="btn-gold btn-sm" target="_blank"
-        >Export TSV</a
-      >
-    {/if}
-  </div>
-  <div class="card table-card">
+{#snippet exportAction()}
+  <a href={api.exportUrl} class="btn-gold btn-sm" target="_blank"
+    >Export TSV</a
+  >
+{/snippet}
+
+<ListPageShell
+  eyebrow="The Route"
+  title="Itinerary"
+  subtitle="Beijing to Hong Kong — day by day"
+  stats={stats}
+  action={canEdit ? exportAction : undefined}
+>
+  <div class="card card-brochure table-card table-card-editorial" class:edit-mode={canEdit}>
     <table>
       <thead>
         <tr>
@@ -154,67 +168,58 @@
     </tbody>
   </table>
   </div>
-</div>
+</ListPageShell>
 
 <style>
-  .itinerary-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .section-header a.btn-gold {
-    display: inline-block;
-    text-decoration: none;
-    border-radius: 99px;
-  }
-
   .table-card {
     overflow-x: auto;
     padding: 0;
-    background: var(--gradient-card) !important;
-    box-shadow: 0 2px 12px rgba(44, 42, 38, 0.06);
   }
 
-  table {
+  .table-card-editorial {
+    border: var(--brochure-card-border);
+    box-shadow: var(--brochure-card-shadow);
+  }
+
+  .table-card {
+    position: relative;
+  }
+
+  .table-card table {
     margin: 0;
     table-layout: fixed;
   }
 
-  th {
-    padding: 14px 16px;
+  .table-card thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .table-card th {
+    padding: 16px 20px;
     background: linear-gradient(
       180deg,
       var(--bg-hover) 0%,
       var(--bg-secondary) 100%
     );
     color: var(--gold-dim);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
-  th:first-child {
+  .table-card th:first-child {
     border-radius: var(--radius-lg) 0 0 0;
   }
 
-  th:last-child {
+  .table-card th:last-child {
     border-radius: 0 var(--radius-lg) 0 0;
   }
 
-  td {
-    padding: 12px 16px;
+  .table-card td {
+    padding: 14px 20px;
   }
 
   .col-thumb {

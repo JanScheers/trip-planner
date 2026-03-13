@@ -1,7 +1,3 @@
-# China Trip Tips
-
-Practical advice for our 21-day China itinerary (October 2026).
-
 ## Packing
 
 - **Power adapters**: China uses Type A, C, or I plugs. Bring a universal adapter; 220V.

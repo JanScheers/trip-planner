@@ -3,6 +3,7 @@
   import { navigate } from '../router';
   import type { Accommodation, AuthUser, Day } from '../types';
   import AddAccommodationModal from './AddAccommodationModal.svelte';
+  import ListPageShell from './ListPageShell.svelte';
 
   let { user, editMode }: { user: AuthUser | null; editMode: boolean } = $props();
 
@@ -11,6 +12,14 @@
   let showAddModal = $state(false);
 
   let canAdd = $derived(editMode && user?.is_editor);
+  let stats = $derived(
+    accommodations.length > 0
+      ? [
+          `${accommodations.length} ${accommodations.length === 1 ? 'stay' : 'stays'}`,
+          `${days.filter((d) => d.accommodation_key).length} night${days.filter((d) => d.accommodation_key).length !== 1 ? 's' : ''} booked`,
+        ]
+      : [],
+  );
 
   $effect(() => {
     loadData();
@@ -37,39 +46,55 @@
   }
 </script>
 
-<div class="acc-section">
-  <div class="section-header">
-    <h2 class="section-title">Stays</h2>
-    {#if canAdd}
-      <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add stay</button>
+{#snippet addAction()}
+  <button type="button" class="btn-gold btn-sm" onclick={openAddModal}>Add stay</button>
+{/snippet}
+
+<ListPageShell
+  eyebrow="Where we stay"
+  title="Stays"
+  subtitle="Accommodations across the journey"
+  stats={stats}
+  action={canAdd ? addAction : undefined}
+>
+  <div class="acc-list card card-brochure">
+    {#if accommodations.length === 0}
+      <p class="list-empty">Loading...</p>
+    {:else}
+      <ul class="media-list">
+        {#each accommodations as acc}
+          {@const nightCount = days.filter((d) => d.accommodation_key === acc.key).length}
+          <li>
+            <a href="#/accommodations/{acc.key}" class="media-list-link">
+              {#if acc.hero_image}
+                <img
+                  src={staticUrl(acc.hero_image)}
+                  alt=""
+                  class="media-list-tile"
+                  loading="lazy"
+                />
+              {:else}
+                <span class="media-list-tile-placeholder">
+                  {acc.emoji || '🏨'}
+                </span>
+              {/if}
+              <div class="media-list-body">
+                <span class="media-list-title">{acc.name}</span>
+                {#if acc.notes}
+                  <span class="media-list-meta">{acc.notes}</span>
+                {/if}
+              </div>
+              <span class="media-list-badge"
+                >{nightCount} night{nightCount !== 1 ? 's' : ''}</span
+              >
+              <span class="media-list-arrow">&rarr;</span>
+            </a>
+          </li>
+        {/each}
+      </ul>
     {/if}
   </div>
-
-  <div class="acc-list card">
-  {#if accommodations.length === 0}
-    <p class="text-muted">Loading...</p>
-  {:else}
-    <ul class="acc-list-ul">
-      {#each accommodations as acc}
-        <li>
-          <a href="#/accommodations/{acc.key}" class="acc-list-link">
-            {#if acc.hero_image}
-              <img src={staticUrl(acc.hero_image)} alt="" class="acc-list-thumb" loading="lazy" />
-            {:else}
-              <span class="acc-list-emoji">{acc.emoji || '🏨'}</span>
-            {/if}
-            <span class="acc-list-name">{acc.name}</span>
-            <span class="acc-list-nights"
-              >{days.filter(d => d.accommodation_key === acc.key).length} night{days.filter(d => d.accommodation_key === acc.key).length !== 1 ? 's' : ''}</span
-            >
-            <span class="acc-list-arrow">&rarr;</span>
-          </a>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-  </div>
-</div>
+</ListPageShell>
 
 <AddAccommodationModal
   open={showAddModal}
@@ -78,108 +103,17 @@
 />
 
 <style>
-  .acc-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
   .acc-list {
     padding: 0;
     overflow: hidden;
   }
 
-  .acc-list-ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .acc-list-ul li {
-    border-bottom: 1px solid var(--border);
-  }
-
-  .acc-list-ul li:last-child {
-    border-bottom: none;
-  }
-
-  .acc-list-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    text-decoration: none;
-    color: inherit;
-    transition: background 0.2s, border-color 0.2s;
-    border-left: 3px solid transparent;
-  }
-
-  .acc-list-link:hover {
-    background: var(--bg-hover);
+  .media-list-link:hover {
     border-left-color: var(--gold);
   }
 
-  .acc-list-emoji {
-    font-size: 24px;
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-hover);
-    border-radius: var(--radius);
-    flex-shrink: 0;
-  }
-
-  .acc-list-thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius);
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-  }
-
-  .acc-list-name {
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .acc-list-nights {
-    margin-left: auto;
-    font-size: 12px;
+  .list-empty {
     color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .acc-list-arrow {
-    font-size: 14px;
-    color: var(--text-muted);
-    transition: transform 0.2s;
-  }
-
-  .acc-list-link:hover .acc-list-arrow {
-    color: var(--gold);
-    transform: translateX(4px);
-  }
-
-  .text-muted {
-    color: var(--text-muted);
-    padding: 24px 20px;
+    padding: 24px 24px;
   }
 </style>
